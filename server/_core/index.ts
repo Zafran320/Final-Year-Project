@@ -4,6 +4,7 @@ import net from "net";
 import { registerGeminiLiveProxy } from "../geminiLiveProxy";
 import { serveStatic, setupVite } from "./vite";
 import { app } from "./app";
+import { resolveSessionSecret } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -25,6 +26,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Fail fast in production if JWT_SECRET is missing or weak.
+  resolveSessionSecret();
+
   const server = createServer(app);
 
   // Real-time speech-to-speech (Gemini Live) WebSocket proxy

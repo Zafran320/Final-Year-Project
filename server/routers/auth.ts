@@ -247,34 +247,17 @@ export const authRouter = router({
       identities?: Array<{ provider?: string }>;
     } | null = null;
 
-    // 1. Fast path: Decode JWT payload directly in <1ms without network latency
-    try {
-      const parts = input.accessToken.split(".");
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
-        if (payload && payload.sub) {
-          supabaseUser = {
-            id: payload.sub,
-            email: payload.email,
-            user_metadata: payload.user_metadata,
-            app_metadata: payload.app_metadata,
-          };
+    // Always let Supabase verify the token. Decoding the payload locally skips the
+    // signature check, which would let anyone forge a token for any user id.
+    const supabase = getSupabaseAdmin() || getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.getUser(input.accessToken);
+        if (!error && data?.user) {
+          supabaseUser = data.user;
         }
-      }
-    } catch {}
-
-    // 2. Network fallback only if token payload is unparseable
-    if (!supabaseUser) {
-      const supabase = getSupabaseAdmin() || getSupabaseClient();
-      if (supabase) {
-        try {
-          const { data, error } = await supabase.auth.getUser(input.accessToken);
-          if (!error && data?.user) {
-            supabaseUser = data.user;
-          }
-        } catch (err) {
-          console.warn("[Auth] Direct Supabase getUser fallback check timed out:", err);
-        }
+      } catch (err) {
+        console.warn("[Auth] Supabase getUser verification failed:", err);
       }
     }
 

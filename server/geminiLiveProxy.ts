@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import { getGeminiApiKey } from "./gemini";
+import { createRateLimiter, getRequestUser } from "./_core/requestGuards";
 
 interface ClientInitConfig {
   role?: string;
@@ -44,14 +45,29 @@ function getSafeCloseCode(code: unknown): number {
 export function registerGeminiLiveProxy(server: HttpServer) {
   const wss = new WebSocketServer({ noServer: true });
 
-  // Handle HTTP upgrade for /api/gemini-live-ws
-  server.on("upgrade", (request, socket, head) => {
+  const upgradeLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+
+  // Handle HTTP upgrade for /api/gemini-live-ws. Only signed-in users may open a
+  // live session, since each one is billed against the server's Gemini key.
+  server.on("upgrade", async (request, socket, head) => {
     const pathname = request.url ? new URL(request.url, "http://localhost").pathname : "";
-    if (pathname === "/api/gemini-live-ws") {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit("connection", ws, request);
-      });
+    if (pathname !== "/api/gemini-live-ws") return;
+
+    const user = await getRequestUser(request);
+    if (!user) {
+      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
     }
+    if (!upgradeLimiter.check(`user:${user.id}`).allowed) {
+      socket.write("HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
+    }
+
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
   });
 
   wss.on("connection", (clientWs: WebSocket) => {
