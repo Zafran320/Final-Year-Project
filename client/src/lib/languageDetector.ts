@@ -1,5 +1,5 @@
 /**
- * CareerTwin AI - Pakistan-First Language & Dialect Classifier
+ * FutureMaker AI - Pakistan-First Language & Dialect Classifier
  * Fast, lightweight, zero-latency detection for candidate speech & typed responses.
  */
 

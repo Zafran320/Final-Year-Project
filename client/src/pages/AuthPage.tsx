@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 type AuthMode = "login" | "signup";
 
@@ -212,17 +213,17 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
   return (
     <main className={`ct-auth ct-auth--${mode}`} aria-labelledby="auth-title">
       <section className="ct-auth-story">
-        <button className="ct-auth-brand" type="button" onClick={() => setLocation("/")} aria-label="Back to CareerTwin AI home">
-          <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" />
-          <span>CareerTwin <em>AI</em></span>
+        <button className="ct-auth-brand" type="button" onClick={() => setLocation("/")} aria-label="Back to FutureMaker AI home">
+          <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} />
+          <span>FutureMaker <em>AI</em></span>
         </button>
         <motion.div className="ct-auth-editorial" initial={reducedMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.42, ease: [0.23, 1, 0.32, 1] }}>
           <p className="ct-auth-overline"><span /> {isSignup ? "Your private starting point" : "Return to your private practice"}</p>
           <h1>{isSignup ? "A calmer way to prepare starts with what is already yours." : "Pick up the story you have been making stronger."}</h1>
           <p>{isSignup ? "Create a secure space for the experience, projects, and role direction you choose to bring into practice." : "Continue from the evidence, focus, and one next improvement you chose in your last session."}</p>
-          <div className="ct-auth-thread" aria-label="CareerTwin preparation thread"><span>Experience</span><i /><span>Focus</span><i /><strong>One stronger answer</strong></div>
+          <div className="ct-auth-thread" aria-label="FutureMaker preparation thread"><span>Experience</span><i /><span>Focus</span><i /><strong>One stronger answer</strong></div>
         </motion.div>
-        <div className="ct-auth-promises" aria-label="CareerTwin account benefits">
+        <div className="ct-auth-promises" aria-label="FutureMaker account benefits">
           <div><CheckCircle2 size={17} /><span><strong>Your evidence stays yours.</strong> Practice begins with what you can genuinely stand behind.</span></div>
           <div><Sparkles size={17} /><span><strong>One focused next step.</strong> Feedback stays useful, specific, and calm.</span></div>
           <div><ShieldCheck size={17} /><span><strong>Supabase Cloud Security.</strong> End-to-end encrypted authentication & data protection.</span></div>
@@ -236,7 +237,7 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
           <div className="ct-auth-card-identity">
             <span className="ct-auth-card-icon"><LockKeyhole size={20} /></span>
             <span>
-              <small>CareerTwin account</small>
+              <small>FutureMaker account</small>
               <b>{isSignup ? "Set up your private practice" : "Secure return"}</b>
             </span>
           </div>
@@ -367,10 +368,10 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
                 {isSubmitting ? (
                   <Loader2 size={18} className="animate-spin" />
                 ) : (
-                  <img src="/branding/career-twin-logo.png" alt="" />
+                  <img src={BRAND_LOGO_SRC} alt="" />
                 )}
               </span>
-              <span>{isSubmitting ? (isSignup ? "Creating account…" : "Signing in…") : isSignup ? "Create account" : "Sign in to CareerTwin"}</span>
+              <span>{isSubmitting ? (isSignup ? "Creating account…" : "Signing in…") : isSignup ? "Create account" : "Sign in to FutureMaker"}</span>
               <ArrowRight size={17} />
             </button>
           </form>
@@ -385,7 +386,7 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
             }}
             style={{ marginTop: "20px" }}
           >
-            {isSignup ? "Already have an account?" : "New to CareerTwin?"}{" "}
+            {isSignup ? "Already have an account?" : "New to FutureMaker?"}{" "}
             <strong>{isSignup ? "Sign in" : "Create an account"}</strong> <ArrowRight size={14} />
           </button>
 

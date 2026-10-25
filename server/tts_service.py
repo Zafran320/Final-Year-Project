@@ -1,5 +1,5 @@
 """
-CareerTwin AI - Ultra-Realistic Neural Male TTS Pipeline
+FutureMaker AI - Ultra-Realistic Neural Male TTS Pipeline
 Using edge-tts (Azure Neural Voice Engine without API keys) & FastAPI
 """
 
@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 import edge_tts
 
 app = FastAPI(
-    title="CareerTwin AI Neural Audio TTS Service",
+    title="FutureMaker AI Neural Audio TTS Service",
     description="High-fidelity, ultra-low latency male TTS streaming pipeline for Live AI Interviews",
     version="1.0.0"
 )

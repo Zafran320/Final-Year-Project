@@ -31,6 +31,7 @@ import { cityJobPresets } from "./mockData";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { STORAGE_KEYS } from "@/lib/brand";
 
 interface JobRecommendationsGridProps {
   initialJobs: JobCardData[];
@@ -74,7 +75,7 @@ export function JobRecommendationsGrid({
   // Sync saved and applied jobs with Job Radar /jobs page
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem("careertwin_applied_jobs");
+      const stored = localStorage.getItem(STORAGE_KEYS.appliedJobs);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -83,7 +84,7 @@ export function JobRecommendationsGrid({
 
   const [savedJobs, setSavedJobs] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem("careertwin_saved_jobs");
+      const stored = localStorage.getItem(STORAGE_KEYS.savedJobs);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -102,7 +103,7 @@ export function JobRecommendationsGrid({
         toast.success(`Saved ${jobTitle} to bookmarks!`);
       }
       try {
-        localStorage.setItem("careertwin_saved_jobs", JSON.stringify(Array.from(next)));
+        localStorage.setItem(STORAGE_KEYS.savedJobs, JSON.stringify(Array.from(next)));
       } catch {}
       return next;
     });
@@ -113,7 +114,7 @@ export function JobRecommendationsGrid({
       const next = new Set(prev);
       next.add(job.id);
       try {
-        localStorage.setItem("careertwin_applied_jobs", JSON.stringify(Array.from(next)));
+        localStorage.setItem(STORAGE_KEYS.appliedJobs, JSON.stringify(Array.from(next)));
       } catch {}
       return next;
     });
@@ -794,7 +795,7 @@ export function JobRecommendationsGrid({
           </div>
         )}
 
-        {/* ─── Gemini & CareerTwin AI Attribution Footer Badge ─────────────── */}
+        {/* ─── Gemini & FutureMaker AI Attribution Footer Badge ─────────────── */}
         <div className="rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="size-11 rounded-xl bg-gradient-to-br from-[#ff5722] to-[#e8442e] flex items-center justify-center text-white shadow-md shadow-orange-500/30 shrink-0">

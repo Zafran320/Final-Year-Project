@@ -3,6 +3,7 @@ import { ArrowRight, ChevronRight, LogOut, Menu, Moon, Sun, X } from "lucide-rea
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 export type AccountNavDestination = "home" | "dashboard" | "account" | "jobs" | "privacy" | "practice";
 
@@ -228,16 +229,16 @@ export function AccountNavigation({
           className="ref-brand"
           type="button"
           onClick={() => handleNavigate("home")}
-          aria-label="Return to CareerTwin homepage"
+          aria-label="Return to FutureMaker homepage"
         >
           <span className="ref-brand__logo-wrap">
             <img
-              src="/branding/career-twin-logo.png"
-              alt="CareerTwin AI"
+              src={BRAND_LOGO_SRC}
+              alt={BRAND_NAME}
               className="ref-brand__logo"
             />
           </span>
-          <span>CareerTwin</span>
+          <span>FutureMaker</span>
           <span className="ref-brand__ai">AI</span>
         </button>
 
@@ -296,7 +297,7 @@ export function AccountNavigation({
               >
                 <span className="ref-topnav__avatar" aria-hidden="true">
                   <img
-                    src={profileImageUrl || "/branding/career-twin-logo.png"}
+                    src={profileImageUrl || BRAND_LOGO_SRC}
                     alt=""
                     className="ref-topnav__avatar-img"
                   />
@@ -304,8 +305,8 @@ export function AccountNavigation({
                 <span className="ref-topnav__name">{displayName}</span>
                 {displayName !== "Account" && <span className="sr-only">Account</span>}
                 <img
-                  src="/branding/career-twin-logo.png"
-                  alt="CareerTwin AI"
+                  src={BRAND_LOGO_SRC}
+                  alt={BRAND_NAME}
                   className="ref-topnav__account-logo"
                   aria-hidden="true"
                 />

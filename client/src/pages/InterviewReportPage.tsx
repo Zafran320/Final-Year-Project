@@ -1319,7 +1319,7 @@ export default function InterviewReportPage() {
         <section className={`rounded-3xl p-6 border ${themeTokens.cardBorder} ${themeTokens.cardBg} space-y-4`}>
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Sparkles size={16} style={{ color: themeTokens.primary }} />
-            <span>CareerTwin Transformation Pipeline</span>
+            <span>FutureMaker Transformation Pipeline</span>
           </h3>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300 w-full sm:w-auto justify-center font-medium">

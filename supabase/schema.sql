@@ -1,4 +1,4 @@
--- Supabase PostgreSQL Schema for CareerTwin AI
+-- Supabase PostgreSQL Schema for FutureMaker AI
 -- Run this script in the Supabase Dashboard -> SQL Editor -> New query -> Run
 
 -- 1. Create Role Enum type

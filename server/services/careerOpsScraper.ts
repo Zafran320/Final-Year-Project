@@ -712,7 +712,7 @@ async function fetchRemoteOKJobs(): Promise<ScrapedJob[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://remoteok.com/api?tag=dev", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -763,7 +763,7 @@ async function fetchArbeitnowJobs(): Promise<ScrapedJob[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://www.arbeitnow.com/api/job-board-api", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -806,7 +806,7 @@ async function fetchJobicyJobs(): Promise<ScrapedJob[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://jobicy.com/api/v2/remote-jobs?count=25&industry=engineering", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -850,7 +850,7 @@ async function fetchTheMuseJobs(): Promise<ScrapedJob[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://www.themuse.com/api/public/jobs?category=Software%20Engineering&page=1", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -909,7 +909,7 @@ async function fetchWWRJobs(): Promise<ScrapedJob[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://weworkremotely.com/categories/remote-programming-jobs.rss", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

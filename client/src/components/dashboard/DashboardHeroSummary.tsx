@@ -39,7 +39,7 @@ export function DashboardHeroSummary({
               {data.overallScore > 0 ? "Analysis Complete" : "Setup Required"}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Evaluated by CareerTwin AI Core
+              Evaluated by FutureMaker AI Core
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">

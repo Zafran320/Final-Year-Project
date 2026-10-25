@@ -1,5 +1,5 @@
 /**
- * HomePage — Enhanced CareerTwin AI homepage
+ * HomePage — Enhanced FutureMaker AI homepage
  *
  * Combines the interactive cursor-tracking character canvas (room + 3D Aiden sprite sweep + warm pointer glow)
  * with the authentic production capabilities and metrics from the presentation:
@@ -113,17 +113,17 @@ export function HomePage({
 
           <div className={`ref-hero__inner ${reducedMotion ? "is-reduced" : ""}`}>
             <h1 className="ref-hero-title">
-              <span>Career</span><span className="ref-hero-title__accent">Twin</span> <span className="ref-hero-title__sub">AI</span>
+              <span>Future</span><span className="ref-hero-title__accent">Maker</span> <span className="ref-hero-title__sub">AI</span>
             </h1>
 
             <p className="ref-lede">
-              Pakistan&rsquo;s first <strong className="ref-highlight">autonomous AI career twin</strong> and multimodal
-              interview simulator &mdash; powered by CareerTwin AI, with real-time voice, computer vision proctoring,
+              Pakistan&rsquo;s first <strong className="ref-highlight">autonomous AI career coach</strong> and multimodal
+              interview simulator &mdash; powered by FutureMaker AI, with real-time voice, computer vision proctoring,
               and adaptive ML assessment.
             </p>
 
             <div className="ref-pill-tags">
-              <span className="ref-pill-tag ref-pill-tag--ember">🎙️ CareerTwin Realtime Voice</span>
+              <span className="ref-pill-tag ref-pill-tag--ember">🎙️ FutureMaker Realtime Voice</span>
               <span className="ref-pill-tag ref-pill-tag--cyan">👁️ MediaPipe Vision</span>
               <span className="ref-pill-tag ref-pill-tag--violet">📊 Adaptive ML Rubric</span>
               <span className="ref-pill-tag ref-pill-tag--green">🇵🇰 Roman Urdu Native</span>
@@ -132,7 +132,7 @@ export function HomePage({
 
             <div className="ref-actions">
               <button className="ref-btn" type="button" onClick={onStart}>
-                Meet your twin
+                Meet your coach
               </button>
               <button
                 className="ref-btn ref-btn--ghost"
@@ -153,12 +153,12 @@ export function HomePage({
         <div className="ref-lower-sections" id="ref-lower-sections">
           <div className="ref-lower-bg" aria-hidden="true" />
           <div className="ref-lower-content">
-            {/* ── How to Use CareerTwin AI ── */}
+            {/* ── How to Use FutureMaker AI ── */}
             <section className="ref-panel" id="ref-how-it-works">
               <div className="ref-wrap">
                 <div className="ref-head ref-head--center reveal">
               <span className="ref-section-badge">Simple 5-Step Journey</span>
-              <h2>How to Use <span className="ref-title-gradient">CareerTwin AI</span></h2>
+              <h2>How to Use <span className="ref-title-gradient">FutureMaker AI</span></h2>
               <p className="ref-head__sub">
                 Follow these simple steps to set up your profile, upload your resume, target any custom company or Job Radar opening, and practice live with Aiden.
               </p>
@@ -198,7 +198,7 @@ export function HomePage({
                 </div>
                 <h3>2. Head to Account &amp; Upload CV</h3>
                 <p>
-                  Go to your Account section and upload your resume (PDF or DOCX). Our ATS intelligence automatically parses 25+ fields to build your tailored Career Twin persona.
+                  Go to your Account section and upload your resume (PDF or DOCX). Our ATS intelligence automatically parses 25+ fields to build your tailored FutureMaker profile.
                 </p>
                 <div className="ref-step-footer">
                   <span className="ref-step-tag ref-step-tag--cyan">📄 PDF / DOCX Parsing</span>
@@ -324,9 +324,9 @@ export function HomePage({
                   <span className="ref-card__num">01</span>
                   <span className="ref-tag ref-tag--orange">Sub-500ms Voice</span>
                 </div>
-                <h3>Multimodal CareerTwin Voice Engine</h3>
+                <h3>Multimodal FutureMaker Voice Engine</h3>
                 <p>
-                  RFC-6455 bidirectional WebSocket streaming directly to CareerTwin Multimodal Voice Architecture with Aiden Neural Voice.
+                  RFC-6455 bidirectional WebSocket streaming directly to FutureMaker Multimodal Voice Architecture with Aiden Neural Voice.
                   Browser-native 16kHz AudioWorklet capture and 24kHz PCM gapless playback with soft gain-ramp interruption.
                 </p>
                 <div className="ref-card-hud">
@@ -437,7 +437,7 @@ export function HomePage({
                   Traditional AI breaks on <span className="ref-title-gradient--amber">Pakistani speech</span> &mdash; human coaches charge <em>$250/hr.</em>
                 </h2>
                 <p className="ref-split-desc">
-                  CareerTwin AI is purpose-built for Pakistani students and professionals. It natively understands Roman Urdu phonetics,
+                  FutureMaker AI is purpose-built for Pakistani students and professionals. It natively understands Roman Urdu phonetics,
                   technical Pakistani colloquialisms, and spontaneous code-switching between English and Urdu without requiring manual toggles.
                 </p>
                 <div className="ref-chips-row">
@@ -576,7 +576,7 @@ export function HomePage({
                 <Zap size={20} className="ref-stat-icon ref-stat-icon--ember" />
                 <span className="ref-stat-card__value ref-stat-card__value--ember">&lt;500ms</span>
                 <span className="ref-stat-card__label">
-                  Bidirectional voice latency on CareerTwin Realtime pipeline
+                  Bidirectional voice latency on FutureMaker Realtime pipeline
                 </span>
               </div>
               <div className="ref-stat-card">
@@ -614,7 +614,7 @@ export function HomePage({
               </p>
               <div className="ref-actions ref-actions--center">
                 <button className="ref-btn" type="button" onClick={onStart}>
-                  Meet your twin
+                  Meet your coach
                 </button>
                 <button
                   className="ref-btn ref-btn--ghost"
@@ -642,7 +642,7 @@ export function HomePage({
         {/* ── Footer ── */}
         <footer className="ref-footer">
           <div>
-            <strong>CareerTwin AI</strong> &mdash; Autonomous Multimodal Interview Coach
+            <strong>FutureMaker AI</strong> &mdash; Autonomous Multimodal Interview Coach
           </div>
           <span className="ref-footer__note">
             &bull; All Systems Operational &bull; Realtime Voice v2.5 &bull; Zero-Knowledge Proctoring

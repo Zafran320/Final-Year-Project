@@ -1,4 +1,4 @@
-/* CareerTwin AI: an auth-first, private preparation workspace. No preview account, hardcoded user, or simulated coaching result is shown. */
+/* FutureMaker AI: an auth-first, private preparation workspace. No preview account, hardcoded user, or simulated coaching result is shown. */
 import {
   ArrowRight,
   Check,
@@ -242,7 +242,7 @@ export default function Home() {
             <section className="ct-panel ct-consent-card" aria-labelledby="consent-title">
               <p className="ct-eyebrow"><span className="ct-eyebrow-mark" /> Private practice</p>
               <h1 id="consent-title" className="ct-card-title">Before we start</h1>
-              <p className="ct-card-copy">CareerTwin uses only the resume, role brief, and answers you choose to provide. You can clear the current browser session at any time. It is a learning tool and does not make hiring decisions.</p>
+              <p className="ct-card-copy">FutureMaker uses only the resume, role brief, and answers you choose to provide. You can clear the current browser session at any time. It is a learning tool and does not make hiring decisions.</p>
               <label className="ct-check-row"><input type="checkbox" checked={understood} onChange={(event) => setUnderstood(event.target.checked)} /> <span>I understand and want to continue.</span></label>
               <div className="ct-action-row"><button className="ct-button ct-button--full" type="button" disabled={!understood} onClick={() => navigate("company-prep")}>Continue to preparation <ArrowRight size={16} /></button></div>
               <button className="ct-text-action" style={{ marginTop: 18 }} type="button" onClick={() => navigate("session")}>What data is stored? <ChevronRight size={14} /></button>
@@ -295,7 +295,7 @@ export default function Home() {
               <p className="ct-eyebrow"><span className="ct-eyebrow-mark" /> Secure workspace</p>
               <h1 id="session-title" className="ct-title ct-title--compact">Your preparation brief.</h1>
               {deleted ? (
-                <section className="ct-panel" style={{ marginTop: 30 }}><span className="ct-error-icon"><Check size={22} color="#3DDC97" /></span><p className="ct-card-copy">The current browser-session content has been cleared. Add only the material you want CareerTwin to use when you are ready.</p><div className="ct-action-row"><button className="ct-button" type="button" onClick={() => navigate("intake")}>Create a new brief <ArrowRight size={16} /></button></div></section>
+                <section className="ct-panel" style={{ marginTop: 30 }}><span className="ct-error-icon"><Check size={22} color="#3DDC97" /></span><p className="ct-card-copy">The current browser-session content has been cleared. Add only the material you want FutureMaker to use when you are ready.</p><div className="ct-action-row"><button className="ct-button" type="button" onClick={() => navigate("intake")}>Create a new brief <ArrowRight size={16} /></button></div></section>
               ) : contextReady ? (
                 <>
                   <p className="ct-lede">Your own preparation context is ready. It remains in this browser session until you clear it.</p>
@@ -304,7 +304,7 @@ export default function Home() {
                     <article className="ct-stored-item"><span className="ct-stored-icon"><LockKeyhole size={17} /></span><div><p className="ct-stored-title">Target role context</p><p className="ct-stored-copy">{jobWords} words supplied by you for this current session.</p></div></article>
                     <article className="ct-stored-item"><span className="ct-stored-icon"><Info size={17} /></span><div><p className="ct-stored-title">Coaching status</p><p className="ct-stored-copy">Personalized question generation and feedback require the secure coaching service. They are intentionally unavailable until that service is connected.</p></div></article>
                   </div>
-                  <p className="ct-info-line"><ShieldCheck size={16} /> CareerTwin does not create hiring predictions or invent practice results for your account.</p>
+                  <p className="ct-info-line"><ShieldCheck size={16} /> FutureMaker does not create hiring predictions or invent practice results for your account.</p>
                   <div className="ct-action-row"><button className="ct-button ct-button--secondary" type="button" onClick={() => navigate("intake")}>Edit preparation brief</button><button className="ct-button ct-button--danger" type="button" onClick={() => setDeleteOpen(true)}><Trash2 size={16} /> Clear current session</button></div>
                 </>
               ) : (

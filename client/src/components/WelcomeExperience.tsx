@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronRight, LockKeyhole, LogOut, Menu, Moon, Play, ShieldCheck, Sun, X } from "lucide-react";
 import React, { useEffect, useRef, useState, type PointerEvent } from "react";
 import { MouseTrackingHeroCanvas } from "./MouseTrackingHeroCanvas";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 type WelcomeExperienceProps = {
   onStart: () => void;
@@ -74,7 +75,7 @@ export function WelcomeExperience({
       .slice(0, 2)
       .map((part) => part[0])
       .join("")
-      .toUpperCase() || "CT";
+      .toUpperCase() || "FM";
 
   const hasProfileImage = Boolean(profileImageUrl && profileImageUrl !== failedProfileImageUrl);
   const renderProfileAvatar = () =>
@@ -244,11 +245,11 @@ export function WelcomeExperience({
               className="ct-home-brand"
               type="button"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              aria-label="CareerTwin AI homepage"
+              aria-label="FutureMaker AI homepage"
             >
-              <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" />
+              <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} />
               <span>
-                CareerTwin <em>AI</em>
+                FutureMaker <em>AI</em>
               </span>
             </button>
             <span className="ct-home-branding-note">Private practice</span>
@@ -265,7 +266,7 @@ export function WelcomeExperience({
               <span>How it works</span>
             </a>
             <a href="#why">
-              <span>Why a twin</span>
+              <span>Why FutureMaker</span>
             </a>
             <a href="#privacy">
               <span>Privacy</span>
@@ -303,7 +304,7 @@ export function WelcomeExperience({
                           <span className="ct-profile-avatar">{renderProfileAvatar()}</span>
                           <div>
                             <strong>{displayName}</strong>
-                            <small>CareerTwin member</small>
+                            <small>FutureMaker member</small>
                           </div>
                         </div>
                         <button
@@ -368,7 +369,7 @@ export function WelcomeExperience({
                     {authenticated ? renderProfileAvatar() : <LockKeyhole size={15} />}
                   </span>
                   <div>
-                    <strong>{authenticated ? displayName : "CareerTwin account"}</strong>
+                    <strong>{authenticated ? displayName : "FutureMaker account"}</strong>
                     <small>{authenticated ? "Account menu" : "Sign in to save practice"}</small>
                   </div>
                 </div>
@@ -382,7 +383,7 @@ export function WelcomeExperience({
                   How it works <ChevronRight size={15} />
                 </a>
                 <a href="#why" onClick={() => setMenuOpen(false)}>
-                  Why a twin <ChevronRight size={15} />
+                  Why FutureMaker <ChevronRight size={15} />
                 </a>
                 <a href="#privacy" onClick={() => setMenuOpen(false)}>
                   Privacy <ChevronRight size={15} />
@@ -437,18 +438,18 @@ export function WelcomeExperience({
           transition={{ duration: motionReduced ? 0 : 0.46, ease: motionEase }}
         >
           <p className="ct-home-eyebrow ct-kicker">
-            <span className="ct-kicker-dot" /> Adaptive Career Twin for Pakistani Graduates
+            <span className="ct-kicker-dot" /> Adaptive AI Career Coach for Pakistani Graduates
           </p>
           <h1 className="ct-hero-title">
             Your career,<br />
             <em>mirrored.</em>
           </h1>
           <p className="ct-hero-lede">
-            Make the first answer feel <strong>like yours.</strong> An AI twin that watches the job market and coaches you through serious interviews — constantly, honestly, and only on your behalf.
+            Make the first answer feel <strong>like yours.</strong> An AI coach that watches the job market and coaches you through serious interviews — constantly, honestly, and only on your behalf.
           </p>
           <div className="ct-welcome-actions">
             <button className="ct-button ct-button--hero" type="button" onClick={onStart}>
-              Meet your twin <ArrowRight size={17} />
+              Meet your coach <ArrowRight size={17} />
             </button>
             <a className="ct-home-text-link" href="#method">
               <Play size={15} /> See the three-step method
@@ -501,7 +502,7 @@ export function WelcomeExperience({
             </div>
             <div
               className="ct-answer-mirror"
-              aria-label="CareerTwin preparation workspace: connect your experience to the role you want"
+              aria-label="FutureMaker preparation workspace: connect your experience to the role you want"
             >
               <div className="ct-answer-mirror-head">
                 <span>YOUR CONTEXT</span>
@@ -543,7 +544,7 @@ export function WelcomeExperience({
           </p>
           <h2>Three steps between you and a decision made with real information.</h2>
           <p>
-            CareerTwin turns the pressure before a first serious interview into a calm progression Pakistani graduates can repeat before the real conversation.
+            FutureMaker turns the pressure before a first serious interview into a calm progression Pakistani graduates can repeat before the real conversation.
           </p>
         </div>
         <div className="ct-welcome-corridor">
@@ -557,7 +558,7 @@ export function WelcomeExperience({
               <p>Bring your context</p>
               <h3>Your resume, the role, your own evidence.</h3>
               <span className="ct-corridor-reveal">
-                The strongest examples come from things you can explain without performing. Your twin reads it once and keeps it.
+                The strongest examples come from things you can explain without performing. FutureMaker reads it once and keeps it.
               </span>
             </div>
             <ArrowRight size={18} />
@@ -602,7 +603,7 @@ export function WelcomeExperience({
             Most career advice is generic because it&rsquo;s written before it knows <em>who you are.</em>
           </blockquote>
           <p className="ct-quote-attrib">
-            Your twin starts from your actual history — not a persona built from averages.
+            Your coach starts from your actual history — not a persona built from averages.
           </p>
         </div>
       </motion.section>
@@ -702,8 +703,8 @@ export function WelcomeExperience({
             <span>Privacy</span>
           </div>
           <div className="ct-welcome-card-footer">
-            <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" />
-            <span>CareerTwin AI workspace</span>
+            <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} />
+            <span>FutureMaker AI workspace</span>
           </div>
         </aside>
       </motion.section>
@@ -720,7 +721,7 @@ export function WelcomeExperience({
         </p>
         <h2>Stop guessing what your next move should be.</h2>
         <p>
-          Two minutes to set up. Walk in calmer, keep the story honest, and let your twin do the watching from there.
+          Two minutes to set up. Walk in calmer, keep the story honest, and let FutureMaker do the watching from there.
         </p>
         <div>
           <button className="ct-button ct-button--hero" type="button" onClick={onStart}>
@@ -738,9 +739,9 @@ export function WelcomeExperience({
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
-          <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" />
+          <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} />
           <span>
-            CareerTwin <em>AI</em>
+            FutureMaker <em>AI</em>
           </span>
         </button>
         <p>Adaptive career practice &amp; market intelligence for the moments that matter.</p>

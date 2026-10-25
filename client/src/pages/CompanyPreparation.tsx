@@ -544,7 +544,7 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
         <div className="ct-company-hero-copy">
           <p className="ct-eyebrow"><span className="ct-eyebrow-mark" /> Company preparation</p>
           <h1 id="company-prep-title" className="ct-title ct-title--compact">Prepare for the company behind the interview.</h1>
-          <p className="ct-lede">Bring the role and evidence you can access. CareerTwin turns your selected sources into a grounded preparation brief before tailored questions begin.</p>
+          <p className="ct-lede">Bring the role and evidence you can access. FutureMaker turns your selected sources into a grounded preparation brief before tailored questions begin.</p>
           <div className="ct-company-trust-row">
             <span><LockKeyhole size={14} /> Account context stays private</span>
             <span><Info size={14} /> Illustrative connectors stay excluded</span>
@@ -576,7 +576,7 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
                 <div className="ct-company-context-heading">
                   <div>
                     <h2 className="ct-company-card-title">Use the profile you have reviewed.</h2>
-                    <p className="ct-company-card-copy">Saved CareerTwin information is included by default. Turn off any category before analysis.</p>
+                    <p className="ct-company-card-copy">Saved FutureMaker information is included by default. Turn off any category before analysis.</p>
                   </div>
                   <span className="ct-company-context-count">{enabledProfileCategories.length} groups · {enabledProfileFieldCount} fields</span>
                 </div>
@@ -613,7 +613,7 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
                   <LockKeyhole size={15} />
                   <div>
                     <strong>Illustrative connector snapshots are excluded</strong>
-                    <span>LinkedIn, Indeed, GitHub, Upwork, and Fiverr are not provider-connected and will not be sent to CareerTwin AI.</span>
+                    <span>LinkedIn, Indeed, GitHub, Upwork, and Fiverr are not provider-connected and will not be sent to FutureMaker AI.</span>
                   </div>
                 </div>
               </article>
@@ -657,7 +657,7 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
               <article className="ct-company-card">
                 <div className="ct-company-card-kicker"><span className="ct-company-step">03</span><span>Evidence</span></div>
                 <h2 className="ct-company-card-title">Add what you can verify.</h2>
-                <p className="ct-company-card-copy">Add public pages, screenshots, or documents you want CareerTwin to analyze.</p>
+                <p className="ct-company-card-copy">Add public pages, screenshots, or documents you want FutureMaker to analyze.</p>
                 <div className="ct-company-link-add">
                   <label className="ct-company-field" htmlFor="public-source-link">
                     <span>Public source link <em>Domain or URL</em></span>
@@ -723,8 +723,8 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
               <div className="ct-company-side-card">
                 <span className="ct-company-side-icon"><Sparkles size={18} /></span>
                 <p className="ct-section-label">Source-attributed output</p>
-                <h3 className="ct-company-side-title">What CareerTwin prepares for you</h3>
-                <p>CareerTwin extracts key responsibilities, competencies, interview themes, and working-style signals so your practice questions can reflect the actual organization.</p>
+                <h3 className="ct-company-side-title">What FutureMaker prepares for you</h3>
+                <p>FutureMaker extracts key responsibilities, competencies, interview themes, and working-style signals so your practice questions can reflect the actual organization.</p>
                 <div className="ct-company-side-list">
                   <span><Check size={14} /> Core company &amp; role summary</span>
                   <span><Check size={14} /> Required &amp; preferred skill mapping</span>
@@ -862,7 +862,7 @@ export default function CompanyPreparation({ onContinue, onActiveWorkChange }: C
           ]}
         />
       )}
-      <p className="ct-info-line"><LockKeyhole size={16} /> Public links are fetched only when you add them. CareerTwin does not crawl beyond your selected sources.</p>
+      <p className="ct-info-line"><LockKeyhole size={16} /> Public links are fetched only when you add them. FutureMaker does not crawl beyond your selected sources.</p>
     </main>
   );
 }

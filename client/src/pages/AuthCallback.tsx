@@ -129,7 +129,7 @@ export default function AuthCallback() {
           letterSpacing: "-0.04em",
           marginBottom: "10px"
         }}>
-          {errorMsg ? "Sign in could not complete" : "Authenticating with CareerTwin..."}
+          {errorMsg ? "Sign in could not complete" : "Authenticating with FutureMaker..."}
         </h2>
 
         <p style={{

@@ -32,7 +32,7 @@ async function requestRepositoryMetadata(sourceLink: string, owner: string, repo
     const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "CareerTwin-AI",
+        "User-Agent": "FutureMaker-AI",
         "X-GitHub-Api-Version": "2026-03-10",
       },
       signal: AbortSignal.timeout(6_000),

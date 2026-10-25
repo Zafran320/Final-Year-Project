@@ -26,6 +26,7 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Page 1", path: "/" },
@@ -168,9 +169,9 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" className="size-6 rounded-md object-cover shrink-0" />
+                  <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} className="size-6 rounded-md object-cover shrink-0" />
                   <span className="font-semibold tracking-tight truncate">
-                    CareerTwin AI
+                    FutureMaker AI
                   </span>
                 </div>
               ) : null}

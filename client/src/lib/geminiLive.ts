@@ -1,5 +1,5 @@
 /**
- * CareerTwin AI — Gemini Live real-time speech-to-speech client.
+ * FutureMaker AI — Gemini Live real-time speech-to-speech client.
  *
  * Streams raw 16kHz PCM mic audio to the same-origin WebSocket proxy
  * (/api/gemini-live-ws) which bridges the Gemini Live API. The model speaks
@@ -199,7 +199,7 @@ export interface GeminiLiveStartConfig {
  * resamples to 16kHz PCM16 chunks posted back to the main thread.
  */
 const MIC_WORKLET_SOURCE = `
-class CareerTwinMicProcessor extends AudioWorkletProcessor {
+class FutureMakerMicProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.enabled = true;
@@ -261,7 +261,7 @@ class CareerTwinMicProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor("careertwin-mic-processor", CareerTwinMicProcessor);
+registerProcessor("futuremaker-mic-processor", FutureMakerMicProcessor);
 `;
 
 function bufferToBase64(buffer: ArrayBuffer): string {
@@ -735,7 +735,7 @@ Conversational Rules:
     URL.revokeObjectURL(url);
 
     this.micSource = this.audioCtx.createMediaStreamSource(this.micStream);
-    this.workletNode = new AudioWorkletNode(this.audioCtx, "careertwin-mic-processor");
+    this.workletNode = new AudioWorkletNode(this.audioCtx, "futuremaker-mic-processor");
     this.workletNode.port.onmessage = (e) => this.handleWorkletMessage(e.data);
 
     // Route worklet through a silent gain so it stays scheduled

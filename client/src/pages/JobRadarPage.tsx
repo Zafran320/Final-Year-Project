@@ -35,6 +35,7 @@ import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { SiFiverr, SiIndeed, SiMeta, SiUpwork } from "react-icons/si";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { STORAGE_KEYS } from "@/lib/brand";
 
 type ConnectionPlatform =
   | "meta"
@@ -138,7 +139,7 @@ export default function JobRadarPage() {
 
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem("careertwin_applied_jobs");
+      const stored = localStorage.getItem(STORAGE_KEYS.appliedJobs);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -147,7 +148,7 @@ export default function JobRadarPage() {
 
   const [savedJobs, setSavedJobs] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem("careertwin_saved_jobs");
+      const stored = localStorage.getItem(STORAGE_KEYS.savedJobs);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -167,7 +168,7 @@ export default function JobRadarPage() {
         toast.success(`Marked application for ${job.company} as Applied! Opening portal…`);
       }
       try {
-        localStorage.setItem("careertwin_applied_jobs", JSON.stringify(Array.from(next)));
+        localStorage.setItem(STORAGE_KEYS.appliedJobs, JSON.stringify(Array.from(next)));
       } catch {}
       return next;
     });
@@ -185,7 +186,7 @@ export default function JobRadarPage() {
         toast.success(`Saved ${job.title} at ${job.company} to bookmarks!`);
       }
       try {
-        localStorage.setItem("careertwin_saved_jobs", JSON.stringify(Array.from(next)));
+        localStorage.setItem(STORAGE_KEYS.savedJobs, JSON.stringify(Array.from(next)));
       } catch {}
       return next;
     });
@@ -985,7 +986,7 @@ export default function JobRadarPage() {
                     {/* AI Recommendation Memo */}
                     <div className="text-[11.5px] text-[var(--text-muted)] leading-relaxed border-l-2 border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_4%,var(--surface-raised))] p-2 rounded-r-lg">
                       <span className="font-bold text-[var(--text)] block text-[10.5px] mb-0.5 uppercase tracking-wide">
-                        CareerTwin AI Assessment
+                        FutureMaker AI Assessment
                       </span>
                       {job.whyRecommended}
                     </div>
@@ -998,7 +999,7 @@ export default function JobRadarPage() {
                       onClick={() => setSelectedReportJob(job)}
                       className="text-[11.5px] font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] flex items-center gap-1 transition-colors"
                     >
-                      <Info size={13} /> CareerTwin Report
+                      <Info size={13} /> FutureMaker Report
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -1113,7 +1114,7 @@ export default function JobRadarPage() {
           </nav>
         )}
 
-        {/* ─── CareerTwin Audit Report Modal (Blocks A–H) ─────────── */}
+        {/* ─── FutureMaker Audit Report Modal (Blocks A–H) ─────────── */}
         <Dialog
           open={Boolean(selectedReportJob)}
           onOpenChange={(open) => {
@@ -1129,7 +1130,7 @@ export default function JobRadarPage() {
                   </div>
                   <div>
                     <p className="ct-home-eyebrow m-0">
-                      <span /> CareerTwin Intelligence Audit
+                      <span /> FutureMaker Intelligence Audit
                     </p>
                     <DialogTitle className="text-lg font-bold text-[var(--text)] m-0">
                       {selectedReportJob.title}

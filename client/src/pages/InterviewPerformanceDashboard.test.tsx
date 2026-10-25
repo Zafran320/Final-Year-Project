@@ -273,7 +273,7 @@ describe("InterviewPerformanceDashboard Component", () => {
 
   it("renders the real AccountNavigation with brand and active dashboard destination", () => {
     renderDashboard();
-    expect(screen.getByText("CareerTwin")).toBeDefined();
+    expect(screen.getByText("FutureMaker")).toBeDefined();
     expect(screen.getByText("Dashboard")).toBeDefined();
     expect(screen.getByText("Job Radar")).toBeDefined();
     expect(screen.getByText("Account")).toBeDefined();

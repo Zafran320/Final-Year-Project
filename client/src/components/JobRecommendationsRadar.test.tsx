@@ -93,7 +93,7 @@ describe("JobRecommendationsRadar", () => {
     expect(openJobLinks[0].getAttribute("target")).toBe("_blank");
   });
 
-  it("opens CareerTwin structured intelligence audit modal when clicking report button", () => {
+  it("opens FutureMaker structured intelligence audit modal when clicking report button", () => {
     render(
       <JobRecommendationsRadar
         form={mockForm}
@@ -103,10 +103,10 @@ describe("JobRecommendationsRadar", () => {
       />
     );
 
-    const reportButtons = screen.getAllByRole("button", { name: /careertwin report/i });
+    const reportButtons = screen.getAllByRole("button", { name: /futuremaker report/i });
     fireEvent.click(reportButtons[0]);
 
-    expect(screen.getByText(/CareerTwin Intelligence Audit/i)).toBeDefined();
+    expect(screen.getByText(/FutureMaker Intelligence Audit/i)).toBeDefined();
     expect(screen.getByText(/Block A: Role & Organization Snapshot/i)).toBeDefined();
     expect(screen.getByText(/Block G: Legitimacy & Verification Check/i)).toBeDefined();
   });

@@ -2228,7 +2228,7 @@ function flattenPdfElements(value, output = [], citations = []) {
 }
 async function extractPdfWithOpenDataLoader(buffer) {
   try {
-    const directory = await mkdtemp(join(tmpdir(), "careertwin-resume-"));
+    const directory = await mkdtemp(join(tmpdir(), "futuremaker-resume-"));
     const inputPath = join(directory, "resume.pdf");
     try {
       await writeFile(inputPath, buffer);
@@ -2326,7 +2326,7 @@ async function extractResumeSuggestions(buffer, mimeType) {
   if (!apiKey) throw new Error("Resume intelligence is not configured yet. Please ensure GEMINI_API_KEY is set in .env.");
   if (buffer.length === 0) throw new Error("The uploaded resume is empty.");
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const prompt = `You are a precision resume intake assistant for CareerTwin AI. Extract ALL information printed in the resume into valid JSON. Capture every single skill, project, certification, language, work experience entry, education details, and awards without omitting anything. Use only facts explicitly stated in the resume; do not invent details.
+  const prompt = `You are a precision resume intake assistant for FutureMaker AI. Extract ALL information printed in the resume into valid JSON. Capture every single skill, project, certification, language, work experience entry, education details, and awards without omitting anything. Use only facts explicitly stated in the resume; do not invent details.
 
 Return all fields:
 - fullName: Full candidate name from header
@@ -3704,7 +3704,7 @@ async function requestRepositoryMetadata(sourceLink, owner, repository) {
     const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "CareerTwin-AI",
+        "User-Agent": "FutureMaker-AI",
         "X-GitHub-Api-Version": "2026-03-10"
       },
       signal: AbortSignal.timeout(6e3)
@@ -4519,7 +4519,7 @@ async function fetchRemoteOKJobs() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://remoteok.com/api?tag=dev", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -4562,7 +4562,7 @@ async function fetchArbeitnowJobs() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://www.arbeitnow.com/api/job-board-api", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -4601,7 +4601,7 @@ async function fetchJobicyJobs() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://jobicy.com/api/v2/remote-jobs?count=25&industry=engineering", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -4639,7 +4639,7 @@ async function fetchTheMuseJobs() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://www.themuse.com/api/public/jobs?category=Software%20Engineering&page=1", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -4685,7 +4685,7 @@ async function fetchWWRJobs() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     const res = await fetch("https://weworkremotely.com/categories/remote-programming-jobs.rss", {
-      headers: { "User-Agent": "CareerTwinAI/1.0" },
+      headers: { "User-Agent": "FutureMakerAI/1.0" },
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -5601,7 +5601,7 @@ function flattenPdfElements2(value, output) {
   for (const [key, child] of Object.entries(record)) if (key !== "content") flattenPdfElements2(child, output);
 }
 async function extractPdfText2(buffer) {
-  const directory = await mkdtemp2(join2(tmpdir2(), "careertwin-company-"));
+  const directory = await mkdtemp2(join2(tmpdir2(), "futuremaker-company-"));
   const inputPath = join2(directory, "source.pdf");
   try {
     await writeFile2(inputPath, buffer);
@@ -5620,7 +5620,7 @@ async function preparePublicSource(rawUrl, label, kind) {
   try {
     let currentUrl = await assertPublicUrl(rawUrl);
     for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
-      const response = await fetch(currentUrl, { redirect: "manual", headers: { Accept: "text/html,text/plain,application/pdf,image/jpeg,image/png,image/webp", "User-Agent": "CareerTwin-AI-source-preview/1.0" }, signal: AbortSignal.timeout(fetchTimeoutMs) });
+      const response = await fetch(currentUrl, { redirect: "manual", headers: { Accept: "text/html,text/plain,application/pdf,image/jpeg,image/png,image/webp", "User-Agent": "FutureMaker-AI-source-preview/1.0" }, signal: AbortSignal.timeout(fetchTimeoutMs) });
       if (response.status >= 300 && response.status < 400) {
         if (redirect === maxRedirects) throw new Error("This source redirected too many times.");
         const location = response.headers.get("location");
@@ -5673,7 +5673,7 @@ async function prepareUploadedSource(file) {
   }
 }
 function profileContext(profile, selectedCategoryIds) {
-  if (!profile) return { text: "No saved CareerTwin profile is available. Use only the selected company and role material.", includedCategoryIds: [], includedFieldCount: 0 };
+  if (!profile) return { text: "No saved FutureMaker profile is available. Use only the selected company and role material.", includedCategoryIds: [], includedFieldCount: 0 };
   const selected = new Set(selectedCategoryIds);
   const contextLines = [];
   const includedCategoryIds = [];
@@ -5688,7 +5688,7 @@ function profileContext(profile, selectedCategoryIds) {
 ${values.join("\n")}`);
   }
   return {
-    text: contextLines.length ? contextLines.join("\n\n") : "No selected saved CareerTwin profile fields are available. Use only the selected company and role material.",
+    text: contextLines.length ? contextLines.join("\n\n") : "No selected saved FutureMaker profile fields are available. Use only the selected company and role material.",
     includedCategoryIds,
     includedFieldCount
   };
@@ -5845,11 +5845,11 @@ ${source.text}`).join("\n\n").slice(0, maxCombinedSourceCharacters);
   if (!textSources && !imageSources.length) throw new Error("Add readable company or role material before starting analysis.");
   const sourceLabels = sources.map((source) => `${source.label} (${source.status})`).join(", ");
   const accountContext = profileContext(profile, input.profileCategoryIds);
-  const prompt = `You are CareerTwin AI's company-preparation analyst for a private interview-practice workspace. Analyze only the user-supplied company and role material below, then connect it to the saved CareerTwin preparation profile. Do not claim that you visited a source unless it is listed as analyzed. Do not invent company facts, open roles, compensation, culture, employees, locations, interview stages, or technologies. Separate explicit evidence from preparation hypotheses in uncertaintyNotes. Do not output phone numbers, email addresses, private URLs, or raw resume text. Return JSON only.
+  const prompt = `You are FutureMaker AI's company-preparation analyst for a private interview-practice workspace. Analyze only the user-supplied company and role material below, then connect it to the saved FutureMaker preparation profile. Do not claim that you visited a source unless it is listed as analyzed. Do not invent company facts, open roles, compensation, culture, employees, locations, interview stages, or technologies. Separate explicit evidence from preparation hypotheses in uncertaintyNotes. Do not output phone numbers, email addresses, private URLs, or raw resume text. Return JSON only.
 
 Company: ${input.companyName}
 Target role: ${input.targetRole}
-Selected saved CareerTwin preparation context (only the enabled categories below):
+Selected saved FutureMaker preparation context (only the enabled categories below):
 ${accountContext.text}
 
 Excluded by design: contact identity fields, uploaded resume file contents, and all local illustrative LinkedIn, Indeed, GitHub, Upwork, and Fiverr connector fixtures. Do not reference excluded data.
@@ -5863,7 +5863,7 @@ Return a concise reviewable brief with:
 - requiredSkills: skills explicitly required or strongly signaled
 - preferredSkills: optional or adjacent skills
 - technologySignals: explicit tools, languages, platforms, or technical areas
-- interviewThemes: themes CareerTwin can use for later question generation
+- interviewThemes: themes FutureMaker can use for later question generation
 - workingStyleSignals: only explicit or carefully qualified signals
 - sourceAttributions: sourceLabel plus a short support statement for the strongest claims
 - uncertaintyNotes: any missing context, inference, or ambiguity the user should verify

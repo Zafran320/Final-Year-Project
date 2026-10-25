@@ -138,7 +138,7 @@ export const authRouter = router({
       lastSignedIn: new Date(),
     });
 
-    // 3. Generate CareerTwin signed session
+    // 3. Generate FutureMaker signed session
     const sessionToken = await sdk.createSessionToken(openId, {
       name: displayName,
       expiresInMs: ONE_YEAR_MS,
@@ -211,7 +211,7 @@ export const authRouter = router({
       lastSignedIn: new Date(),
     });
 
-    // 3. Create CareerTwin signed session cookie
+    // 3. Create FutureMaker signed session cookie
     const sessionToken = await sdk.createSessionToken(openId, {
       name: displayName,
       expiresInMs: ONE_YEAR_MS,

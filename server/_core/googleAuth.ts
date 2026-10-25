@@ -1,4 +1,4 @@
-/* Secure Google OAuth boundary: client secrets and code exchange remain server-only; the browser receives only a signed CareerTwin session. */
+/* Secure Google OAuth boundary: client secrets and code exchange remain server-only; the browser receives only a signed FutureMaker session. */
 import { randomBytes } from "crypto";
 import { OAuth2Client } from "google-auth-library";
 import type { Express, Request, Response } from "express";

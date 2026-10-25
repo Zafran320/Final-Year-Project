@@ -18,6 +18,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 interface DashboardNavbarProps {
   theme: "light" | "dark";
@@ -62,11 +63,11 @@ export function DashboardNavbar({
             className="flex items-center gap-2.5 cursor-pointer group select-none"
           >
             <div className="relative flex items-center justify-center size-9 rounded-xl overflow-hidden shadow-md shadow-orange-500/20 transition-transform group-hover:scale-105 border border-white/10">
-              <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" className="size-full object-cover" />
+              <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} className="size-full object-cover" />
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className={`text-lg font-bold tracking-tight ${theme === "light" ? "text-slate-900" : "text-white"}`}>
-                Career Twin
+                FutureMaker
               </span>
               <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-500 border border-orange-500/30">
                 Ai
