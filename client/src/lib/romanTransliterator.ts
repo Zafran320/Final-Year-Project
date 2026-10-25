@@ -1,5 +1,5 @@
 /**
- * CareerTwin AI - Urdu & Hindi to Roman Script Transliterator
+ * FutureMaker AI - Urdu & Hindi to Roman Script Transliterator
  *
  * Converts Perso-Arabic Urdu script and Devanagari Hindi script into fluent,
  * natural, human-readable Roman Urdu and Roman Hindi.

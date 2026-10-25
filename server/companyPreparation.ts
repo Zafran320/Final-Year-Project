@@ -144,7 +144,7 @@ function flattenPdfElements(value: unknown, output: string[]) {
 }
 
 async function extractPdfText(buffer: Buffer): Promise<ParsedPdf> {
-  const directory = await mkdtemp(join(tmpdir(), "careertwin-company-"));
+  const directory = await mkdtemp(join(tmpdir(), "futuremaker-company-"));
   const inputPath = join(directory, "source.pdf");
   try {
     await writeFile(inputPath, buffer);
@@ -164,7 +164,7 @@ async function preparePublicSource(rawUrl: string, label: string, kind: "website
   try {
     let currentUrl = await assertPublicUrl(rawUrl);
     for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
-      const response = await fetch(currentUrl, { redirect: "manual", headers: { Accept: "text/html,text/plain,application/pdf,image/jpeg,image/png,image/webp", "User-Agent": "CareerTwin-AI-source-preview/1.0" }, signal: AbortSignal.timeout(fetchTimeoutMs) });
+      const response = await fetch(currentUrl, { redirect: "manual", headers: { Accept: "text/html,text/plain,application/pdf,image/jpeg,image/png,image/webp", "User-Agent": "FutureMaker-AI-source-preview/1.0" }, signal: AbortSignal.timeout(fetchTimeoutMs) });
       if (response.status >= 300 && response.status < 400) {
         if (redirect === maxRedirects) throw new Error("This source redirected too many times.");
         const location = response.headers.get("location");
@@ -225,7 +225,7 @@ type ProfileContextSummary = {
 };
 
 function profileContext(profile: Record<string, unknown> | null, selectedCategoryIds: PracticeProfileCategoryId[]): ProfileContextSummary {
-  if (!profile) return { text: "No saved CareerTwin profile is available. Use only the selected company and role material.", includedCategoryIds: [], includedFieldCount: 0 };
+  if (!profile) return { text: "No saved FutureMaker profile is available. Use only the selected company and role material.", includedCategoryIds: [], includedFieldCount: 0 };
   const selected = new Set(selectedCategoryIds);
   const contextLines: string[] = [];
   const includedCategoryIds: PracticeProfileCategoryId[] = [];
@@ -239,7 +239,7 @@ function profileContext(profile: Record<string, unknown> | null, selectedCategor
     contextLines.push(`${category.label}:\n${values.join("\n")}`);
   }
   return {
-    text: contextLines.length ? contextLines.join("\n\n") : "No selected saved CareerTwin profile fields are available. Use only the selected company and role material.",
+    text: contextLines.length ? contextLines.join("\n\n") : "No selected saved FutureMaker profile fields are available. Use only the selected company and role material.",
     includedCategoryIds,
     includedFieldCount,
   };
@@ -394,11 +394,11 @@ export async function analyzeCompanyPreparation(input: CompanyPreparationInput, 
 
   const sourceLabels = sources.map((source) => `${source.label} (${source.status})`).join(", ");
   const accountContext = profileContext(profile, input.profileCategoryIds);
-  const prompt = `You are CareerTwin AI's company-preparation analyst for a private interview-practice workspace. Analyze only the user-supplied company and role material below, then connect it to the saved CareerTwin preparation profile. Do not claim that you visited a source unless it is listed as analyzed. Do not invent company facts, open roles, compensation, culture, employees, locations, interview stages, or technologies. Separate explicit evidence from preparation hypotheses in uncertaintyNotes. Do not output phone numbers, email addresses, private URLs, or raw resume text. Return JSON only.
+  const prompt = `You are FutureMaker AI's company-preparation analyst for a private interview-practice workspace. Analyze only the user-supplied company and role material below, then connect it to the saved FutureMaker preparation profile. Do not claim that you visited a source unless it is listed as analyzed. Do not invent company facts, open roles, compensation, culture, employees, locations, interview stages, or technologies. Separate explicit evidence from preparation hypotheses in uncertaintyNotes. Do not output phone numbers, email addresses, private URLs, or raw resume text. Return JSON only.
 
 Company: ${input.companyName}
 Target role: ${input.targetRole}
-Selected saved CareerTwin preparation context (only the enabled categories below):
+Selected saved FutureMaker preparation context (only the enabled categories below):
 ${accountContext.text}
 
 Excluded by design: contact identity fields, uploaded resume file contents, and all local illustrative LinkedIn, Indeed, GitHub, Upwork, and Fiverr connector fixtures. Do not reference excluded data.
@@ -412,7 +412,7 @@ Return a concise reviewable brief with:
 - requiredSkills: skills explicitly required or strongly signaled
 - preferredSkills: optional or adjacent skills
 - technologySignals: explicit tools, languages, platforms, or technical areas
-- interviewThemes: themes CareerTwin can use for later question generation
+- interviewThemes: themes FutureMaker can use for later question generation
 - workingStyleSignals: only explicit or carefully qualified signals
 - sourceAttributions: sourceLabel plus a short support statement for the strongest claims
 - uncertaintyNotes: any missing context, inference, or ambiguity the user should verify

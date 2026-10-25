@@ -88,13 +88,13 @@ describe("AccountDetails", () => {
       fullName: "Old name", location: "Old city", phone: "0300", contactEmail: "old@example.com", linkedinUrl: "https://linkedin.com/in/old", portfolioUrl: "https://old.dev", age: "33", education: "Master's", degree: "Old degree", careerStatus: "working", currentJob: "Old role", company: "Old company", lookingFor: "Freelance", careerField: "Old field", targetRole: "Old target", skills: "Old skill", experience: "Old experience", professionalSummary: "Old summary", certifications: "Old certification", languages: "Old language", projects: "Old project", verifiedDetails: "Old detail", personalizationEnabled: true, jobRecommendationsEnabled: false, professionalConnectionsEnabled: true,
     };
     const suggestions: ResumeSuggestions = {
-      fullName: "Resume name", location: "Lahore", phone: "0300", contactEmail: "resume@example.com", linkedinUrl: "https://linkedin.com/in/resume", portfolioUrl: "https://resume.dev", age: 22, education: "Bachelor's", degree: "BS Computer Science", careerStatus: "seeking", currentJob: "Graduate", company: "CareerTwin", lookingFor: "First Job", careerField: "Engineering", targetRole: "Software Engineer", skills: ["React", "TypeScript"], experience: "Intern at CareerTwin — Lahore | 2025", professionalSummary: "Resume summary", certifications: [{ name: "AWS Certified Cloud Practitioner", issuer: "Amazon Web Services", credentialId: "AWS-123", issuedOn: "Jun 2025", link: "https://example.com/aws" }], languages: [{ name: "Urdu", proficiency: "Native" }, { name: "English", proficiency: "Professional" }], projects: [{ name: "CareerTwin", summary: "Interview preparation platform", link: "github.com/example/careertwin", technologies: ["React", "TypeScript"] }], verifiedDetails: [{ category: "Achievement", title: "Competition recognition", detail: "Runner-up in a university innovation challenge" }], fieldEvidence: {},
+      fullName: "Resume name", location: "Lahore", phone: "0300", contactEmail: "resume@example.com", linkedinUrl: "https://linkedin.com/in/resume", portfolioUrl: "https://resume.dev", age: 22, education: "Bachelor's", degree: "BS Computer Science", careerStatus: "seeking", currentJob: "Graduate", company: "FutureMaker", lookingFor: "First Job", careerField: "Engineering", targetRole: "Software Engineer", skills: ["React", "TypeScript"], experience: "Intern at FutureMaker — Lahore | 2025", professionalSummary: "Resume summary", certifications: [{ name: "AWS Certified Cloud Practitioner", issuer: "Amazon Web Services", credentialId: "AWS-123", issuedOn: "Jun 2025", link: "https://example.com/aws" }], languages: [{ name: "Urdu", proficiency: "Native" }, { name: "English", proficiency: "Professional" }], projects: [{ name: "FutureMaker", summary: "Interview preparation platform", link: "github.com/example/futuremaker", technologies: ["React", "TypeScript"] }], verifiedDetails: [{ category: "Achievement", title: "Competition recognition", detail: "Runner-up in a university innovation challenge" }], fieldEvidence: {},
     };
 
     expect(replaceProfileWithResumeSuggestions(current, suggestions)).toMatchObject({
-      fullName: "Resume name", location: "Lahore", phone: "0300", contactEmail: "resume@example.com", linkedinUrl: "https://linkedin.com/in/resume", portfolioUrl: "https://resume.dev", age: "22", education: "Bachelor's", degree: "BS Computer Science", careerStatus: "seeking", currentJob: "Graduate", company: "CareerTwin", lookingFor: "First Job", careerField: "Engineering", targetRole: "Software Engineer", skills: "React, TypeScript", experience: "Intern at CareerTwin — Lahore | 2025", professionalSummary: "Resume summary", personalizationEnabled: true, jobRecommendationsEnabled: false, professionalConnectionsEnabled: true,
+      fullName: "Resume name", location: "Lahore", phone: "0300", contactEmail: "resume@example.com", linkedinUrl: "https://linkedin.com/in/resume", portfolioUrl: "https://resume.dev", age: "22", education: "Bachelor's", degree: "BS Computer Science", careerStatus: "seeking", currentJob: "Graduate", company: "FutureMaker", lookingFor: "First Job", careerField: "Engineering", targetRole: "Software Engineer", skills: "React, TypeScript", experience: "Intern at FutureMaker — Lahore | 2025", professionalSummary: "Resume summary", personalizationEnabled: true, jobRecommendationsEnabled: false, professionalConnectionsEnabled: true,
     });
-    expect(parseProjectCards(replaceProfileWithResumeSuggestions(current, suggestions).projects)).toEqual([expect.objectContaining({ name: "CareerTwin", technologies: ["React", "TypeScript"] })]);
+    expect(parseProjectCards(replaceProfileWithResumeSuggestions(current, suggestions).projects)).toEqual([expect.objectContaining({ name: "FutureMaker", technologies: ["React", "TypeScript"] })]);
     expect(parseCertificationCards(replaceProfileWithResumeSuggestions(current, suggestions).certifications)).toEqual([expect.objectContaining({ name: "AWS Certified Cloud Practitioner", issuer: "Amazon Web Services" })]);
     expect(parseLanguageCards(replaceProfileWithResumeSuggestions(current, suggestions).languages)).toEqual([expect.objectContaining({ name: "Urdu", proficiency: "Native" }), expect.objectContaining({ name: "English", proficiency: "Professional" })]);
     expect(replaceProfileWithResumeSuggestions(current, suggestions).verifiedDetails).toContain("Competition recognition");
@@ -150,19 +150,19 @@ describe("AccountDetails", () => {
 
   it("normalizes skills into readable tags and turns resume experience into editable timeline entries", () => {
     expect(splitSkillTags("React, TypeScript\nReact | REST APIs")).toEqual(["React", "TypeScript", "REST APIs"]);
-    const entries = parseExperienceTimeline("Intern at Atlas — Islamabad | 2024; Engineer at CareerTwin — Lahore | May 2025 – Present; Associate at Vertex — Karachi | Dec 2024");
+    const entries = parseExperienceTimeline("Intern at Atlas — Islamabad | 2024; Engineer at FutureMaker — Lahore | May 2025 – Present; Associate at Vertex — Karachi | Dec 2024");
     expect(entries).toEqual([
-      expect.objectContaining({ title: "Engineer", organisation: "CareerTwin", period: "May 2025 – Present" }),
+      expect.objectContaining({ title: "Engineer", organisation: "FutureMaker", period: "May 2025 – Present" }),
       expect.objectContaining({ title: "Associate", organisation: "Vertex", period: "Dec 2024" }),
       expect.objectContaining({ title: "Intern", organisation: "Atlas", period: "2024" }),
     ]);
     expect(isCurrentExperience(entries[0]!)).toBe(true);
-    expect(serializeExperienceTimeline([{ ...entries[2]!, title: "Product Intern" }, entries[0]!])).toBe("Product Intern at Atlas — Islamabad | 2024; Engineer at CareerTwin — Lahore | May 2025 – Present");
+    expect(serializeExperienceTimeline([{ ...entries[2]!, title: "Product Intern" }, entries[0]!])).toBe("Product Intern at Atlas — Islamabad | 2024; Engineer at FutureMaker — Lahore | May 2025 – Present");
   });
 
   it("places the Current status tag beside the active role title", () => {
     projectTestMocks.profile = {
-      experience: "Engineer at CareerTwin — Lahore | May 2025 – Present",
+      experience: "Engineer at FutureMaker — Lahore | May 2025 – Present",
       personalizationEnabled: false,
       jobRecommendationsEnabled: false,
       professionalConnectionsEnabled: false,
@@ -176,9 +176,9 @@ describe("AccountDetails", () => {
   });
 
   it("serializes project cards with technology chips and exposes only safe clickable external links", () => {
-    const cards = parseProjectCards(serializeProjectCards([{ id: "project-1", name: "CareerTwin", summary: "Interview preparation platform", link: "github.com/example/careertwin", technologies: ["React", "TypeScript", "React"] }]));
-    expect(cards).toEqual([expect.objectContaining({ name: "CareerTwin", technologies: ["React", "TypeScript"] })]);
-    expect(projectExternalHref(cards[0]!.link)).toBe("https://github.com/example/careertwin");
+    const cards = parseProjectCards(serializeProjectCards([{ id: "project-1", name: "FutureMaker", summary: "Interview preparation platform", link: "github.com/example/futuremaker", technologies: ["React", "TypeScript", "React"] }]));
+    expect(cards).toEqual([expect.objectContaining({ name: "FutureMaker", technologies: ["React", "TypeScript"] })]);
+    expect(projectExternalHref(cards[0]!.link)).toBe("https://github.com/example/futuremaker");
     expect(projectExternalHref("http://portfolio.example/work")).toBe("https://portfolio.example/work");
     expect(projectExternalHref("javascript:alert(1)")).toBe("");
   });
@@ -187,7 +187,7 @@ describe("AccountDetails", () => {
     render(<AccountDetails />);
 
     fireEvent.click(screen.getByRole("button", { name: /Add project/i }));
-    fireEvent.change(screen.getByPlaceholderText("e.g., CareerTwin AI"), { target: { value: "Portfolio platform" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g., FutureMaker AI"), { target: { value: "Portfolio platform" } });
     fireEvent.change(screen.getByPlaceholderText("https://github.com/… or live URL"), { target: { value: "github.com/example/portfolio" } });
     fireEvent.change(screen.getByPlaceholderText("What the project does and the outcome you can discuss."), { target: { value: "A personal work showcase." } });
     fireEvent.change(screen.getByPlaceholderText("e.g., React, TypeScript, MySQL"), { target: { value: "React, TypeScript" } });
@@ -416,7 +416,7 @@ describe("AccountDetails", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Add experience/i }));
     fireEvent.change(screen.getByPlaceholderText("e.g., Software Engineering Intern"), { target: { value: "Product Intern" } });
-    fireEvent.change(screen.getByPlaceholderText("e.g., CareerTwin"), { target: { value: "Atlas" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g., FutureMaker"), { target: { value: "Atlas" } });
     fireEvent.change(screen.getByPlaceholderText("e.g., Lahore"), { target: { value: "Islamabad" } });
     fireEvent.change(screen.getByPlaceholderText("e.g., Jun 2025 – Present"), { target: { value: "2025" } });
     fireEvent.click(screen.getByRole("button", { name: /Save entry/i }));

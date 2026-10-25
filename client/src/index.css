@@ -3897,7 +3897,7 @@ html.light .ct-app,
   opacity: 0.58;
 }
 
-/* OAuth gateway: credentials stay in the managed provider while CareerTwin owns a refined, trust-first entry experience. */
+/* OAuth gateway: credentials stay in the managed provider while FutureMaker owns a refined, trust-first entry experience. */
 .ct-auth {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
@@ -4379,7 +4379,7 @@ html.light .ct-app,
 }
 
 /* ============================================================
-   CareerTwin AI — Hero Site (from reference files.zip)
+   FutureMaker AI — Hero Site (from reference files.zip)
    Character sprite sheet renders as a full-bleed, cursor-tracked
    background layer; content sits above it on a readable scrim.
    ============================================================ */
@@ -16028,7 +16028,7 @@ html.light .ct-app,
   box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-/* Platform-native detail language: keep the provider mark clean while CareerTwin owns the surrounding presentation. */
+/* Platform-native detail language: keep the provider mark clean while FutureMaker owns the surrounding presentation. */
 .ct-connection-details-dialog .ct-connection-details-brand {
   display: grid;
   width: 42px;

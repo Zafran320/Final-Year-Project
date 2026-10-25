@@ -1,8 +1,9 @@
 /* Quiet Signal dual theme: every screen receives the same semantic tokens, preserving hierarchy in dark ember and light blue modes. */
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { STORAGE_KEYS } from "@/lib/brand";
 
 type Theme = "light" | "dark";
-const THEME_STORAGE_KEY = "careertwin-theme-v2";
+const THEME_STORAGE_KEY = STORAGE_KEYS.theme;
 
 interface ThemeContextType {
   theme: Theme;

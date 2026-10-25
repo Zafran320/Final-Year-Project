@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * TASK ROWS LOADING ANIMATION
- * CareerTwin AI Rehearsal Synthesis
+ * FutureMaker AI Rehearsal Synthesis
  * ───────────────────────────────────────────────────────── */
 
 const TICKS = [600, 900, 2400, 1400, 2400, 600];
@@ -191,7 +191,7 @@ export default function TaskRowsLoading({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent,#e8442e)]"></span>
           </span>
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-            CareerTwin AI Synthesis in Progress
+            FutureMaker AI Synthesis in Progress
           </p>
         </div>
         {(companyName || targetRole) && (

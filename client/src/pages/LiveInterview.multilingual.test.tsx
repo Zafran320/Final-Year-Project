@@ -509,23 +509,23 @@ describe("LiveInterview Pakistan-First Multilingual & Auto-Detect Architecture",
       // JSON array of project objects
       const projectArray = [
         {
-          name: "CareerTwin AI",
-          link: "https://careertwin.ai",
+          name: "FutureMaker AI",
+          link: "https://futuremaker.ai",
           summary: "Real-time AI voice interview platform",
           technologies: ["React", "TypeScript", "Node.js", "WebAudio"],
         },
       ];
       const parsedFromArray = parseCandidateProjects(projectArray);
       expect(parsedFromArray).toHaveLength(1);
-      expect(parsedFromArray[0].name).toBe("CareerTwin AI");
-      expect(parsedFromArray[0].link).toBe("https://careertwin.ai");
+      expect(parsedFromArray[0].name).toBe("FutureMaker AI");
+      expect(parsedFromArray[0].link).toBe("https://futuremaker.ai");
       expect(parsedFromArray[0].technologies).toContain("WebAudio");
 
       // JSON string
       const jsonString = JSON.stringify(projectArray);
       const parsedFromJson = parseCandidateProjects(jsonString);
       expect(parsedFromJson).toHaveLength(1);
-      expect(parsedFromJson[0].name).toBe("CareerTwin AI");
+      expect(parsedFromJson[0].name).toBe("FutureMaker AI");
 
       // Plain text with URLs
       const textProjects = "E-Commerce App https://github.com/example/shop; Chatbot https://github.com/example/bot";
@@ -552,7 +552,7 @@ describe("LiveInterview Pakistan-First Multilingual & Auto-Detect Architecture",
         `- Name: Mirza
 - Portfolio / Code Link: https://github.com/example
 - Verified Live Projects & Repositories (Ask about their architecture, tech choices, scale/failure edge cases, and retrospectives):
-  * 1. "CareerTwin AI" | Live Link / Repo: https://careertwin.ai | Tech Stack: React, Node.js, WebAudio | Overview: Real-time voice interview platform`
+  * 1. "FutureMaker AI" | Live Link / Repo: https://futuremaker.ai | Tech Stack: React, Node.js, WebAudio | Overview: Real-time voice interview platform`
       );
 
       // Human turn pacing without an artificial response word budget

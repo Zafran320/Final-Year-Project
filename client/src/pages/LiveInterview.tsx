@@ -64,6 +64,7 @@ import {
   type MLAnswerEvaluation,
 } from "@/lib/questionIntelligence";
 import { ensureRomanScript } from "@/lib/romanTransliterator";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 
 export interface TipItem {
   id: string;
@@ -3085,10 +3086,10 @@ export default function LiveInterview() {
         {/* Left: Brand Logo */}
         <div className="flex items-center gap-2.5">
           <div className="relative size-8 rounded-lg overflow-hidden flex items-center justify-center border border-white/10 shadow-[0_0_12px_rgba(255,70,38,0.35)]">
-            <img src="/branding/career-twin-logo.png" alt="CareerTwin AI" className="size-full object-cover" />
+            <img src={BRAND_LOGO_SRC} alt={BRAND_NAME} className="size-full object-cover" />
           </div>
           <div className="flex items-center gap-1 font-bold tracking-tight text-base text-white">
-            <span>CareerTwin</span>
+            <span>FutureMaker</span>
             <span className="text-[#ff4626]">AI</span>
           </div>
         </div>
@@ -3460,7 +3461,7 @@ export default function LiveInterview() {
             {/* Background fallback portrait image */}
             <img
               src="/interviewer-avatar.jpg"
-              alt="CareerTwin AI Interviewer"
+              alt="FutureMaker AI Interviewer"
               className="w-full h-full object-cover object-center -z-10 opacity-40"
             />
             {/* Subtle Studio Vignette Overlay */}
@@ -4193,7 +4194,7 @@ export default function LiveInterview() {
               </p>
               <p className="text-white/80 leading-relaxed">
                 {typeof window !== "undefined" && (window.location.hostname.endsWith(".vercel.app") || window.location.hostname.includes("vercel"))
-                  ? "CareerTwin AI provisions secure ephemeral session tokens to stream bidirectional audio directly with Google Gemini Live on Vercel. No external WebSocket server is required! You can also supply a custom relay below if desired."
+                  ? "FutureMaker AI provisions secure ephemeral session tokens to stream bidirectional audio directly with Google Gemini Live on Vercel. No external WebSocket server is required! You can also supply a custom relay below if desired."
                   : "On localhost, your session connects seamlessly to the local Node proxy (/api/gemini-live-ws). You can also specify an external WebSocket backend if developing against a remote host."}
               </p>
             </div>
@@ -4472,11 +4473,11 @@ export default function LiveInterview() {
               <p className="text-xs text-[#a5a5b8] mt-2 leading-relaxed">
                 {integrityViolation.reason.toLowerCase().includes("tab") ? (
                   <>
-                    CareerTwin AI Proctoring Engine detected <strong className="text-red-400">excessive tab switching / window unfocusing (3 strikes)</strong>. The interview session has been permanently terminated.
+                    FutureMaker AI Proctoring Engine detected <strong className="text-red-400">excessive tab switching / window unfocusing (3 strikes)</strong>. The interview session has been permanently terminated.
                   </>
                 ) : (
                   <>
-                    CareerTwin AI Computer Vision detected <strong className="text-red-400">{integrityViolation.faceCount} individuals</strong> in your camera feed. Live interviews require strict individual presence to maintain evaluation integrity.
+                    FutureMaker AI Computer Vision detected <strong className="text-red-400">{integrityViolation.faceCount} individuals</strong> in your camera feed. Live interviews require strict individual presence to maintain evaluation integrity.
                   </>
                 )}
               </p>

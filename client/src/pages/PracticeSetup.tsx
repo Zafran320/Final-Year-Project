@@ -191,7 +191,7 @@ export default function PracticeSetup({
             {companyName ? `${companyName} · ` : ""}{targetRole || "10-Level Mock Progression"}
           </h1>
           <p className="ct-lede">
-            Adaptive 10-level mock interview progression synthesized by CareerTwin AI using your verified resume background and target role benchmarks.
+            Adaptive 10-level mock interview progression synthesized by FutureMaker AI using your verified resume background and target role benchmarks.
           </p>
           <div className="ct-company-trust-row">
             <span><LockKeyhole size={14} /> Stage 1 unlocked by default</span>

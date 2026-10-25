@@ -62,19 +62,19 @@ describe("Gemini resume extraction", () => {
       age: "0",
       education: "BSc",
       skills: ["React", "react", " TypeScript "],
-      experience: ["Intern at Atlas — Lahore | 2025", "Volunteer at CareerTwin — Remote | 2024"],
+      experience: ["Intern at Atlas — Lahore | 2025", "Volunteer at FutureMaker — Remote | 2024"],
       certifications: [{ name: "AWS Cloud Practitioner", issuer: "Amazon Web Services", credentialId: "AWS-123", issuedOn: "Jun 2025", link: "https://example.com/aws" }, { name: "aws cloud practitioner", issuer: "Duplicate", credentialId: "", issuedOn: "", link: "" }],
       languages: [{ name: "Urdu", proficiency: "native" }, { name: "English", proficiency: "fluent" }, { name: "urdu", proficiency: "Basic" }],
-      projects: [{ name: "CareerTwin AI", summary: "Interview rehearsal platform", link: "github.com/example/careertwin", technologies: ["React", "react", " TypeScript "] }],
+      projects: [{ name: "FutureMaker AI", summary: "Interview rehearsal platform", link: "github.com/example/futuremaker", technologies: ["React", "react", " TypeScript "] }],
     }, "Ayesha Khan\nAge: 23\nBSc Computer Science") as typeof validSuggestions;
 
     expect(normalized.age).toBe(23);
     expect(normalized.education).toBe("Bachelor's");
     expect(normalized.skills).toEqual(["React", "TypeScript"]);
-    expect(normalized.experience).toBe("Intern at Atlas — Lahore | 2025; Volunteer at CareerTwin — Remote | 2024");
+    expect(normalized.experience).toBe("Intern at Atlas — Lahore | 2025; Volunteer at FutureMaker — Remote | 2024");
     expect(normalized.certifications).toEqual([{ name: "AWS Cloud Practitioner", issuer: "Amazon Web Services", credentialId: "AWS-123", issuedOn: "Jun 2025", link: "https://example.com/aws" }]);
     expect(normalized.languages).toEqual([{ name: "Urdu", proficiency: "Native" }, { name: "English", proficiency: "Professional" }]);
-    expect(normalized.projects).toEqual([{ name: "CareerTwin AI", summary: "Interview rehearsal platform", link: "https://github.com/example/careertwin", technologies: ["React", "TypeScript"] }]);
+    expect(normalized.projects).toEqual([{ name: "FutureMaker AI", summary: "Interview rehearsal platform", link: "https://github.com/example/futuremaker", technologies: ["React", "TypeScript"] }]);
     expect(normalized.fieldEvidence.age).toEqual({ confidence: 0.98, sourceText: "Age: 23" });
     expect(resumeSuggestionSchema.parse(normalized)).toMatchObject({ age: 23, education: "Bachelor's" });
   });
@@ -87,13 +87,13 @@ describe("Gemini resume extraction", () => {
       portfolioUrl: "http://ayesha.dev/work",
       skills,
       certifications: [{ name: "Cloud Certificate", issuer: "AWS", credentialId: "AWS-123", issuedOn: "2026", link: "www.example.com/credentials/aws" }],
-      projects: [{ name: "CareerTwin", summary: "Interview practice", link: "github.com/example/careertwin", technologies: ["React"] }],
+      projects: [{ name: "FutureMaker", summary: "Interview practice", link: "github.com/example/futuremaker", technologies: ["React"] }],
     }) as typeof validSuggestions;
 
     expect(normalized.linkedinUrl).toBe("https://linkedin.com/in/ayesha-khan");
     expect(normalized.portfolioUrl).toBe("https://ayesha.dev/work");
     expect(normalized.certifications[0]?.link).toBe("https://www.example.com/credentials/aws");
-    expect(normalized.projects[0]?.link).toBe("https://github.com/example/careertwin");
+    expect(normalized.projects[0]?.link).toBe("https://github.com/example/futuremaker");
     expect(normalized.skills).toHaveLength(40);
     expect(normalized.skills.at(-1)).toBe("Skill 40");
     expect(normalizePublicHttpsUrl("javascript:alert(1)")).toBe("");
@@ -122,14 +122,14 @@ describe("Gemini resume extraction", () => {
       certifications: [],
       experience: [
         { title: "Software Engineering Intern", company: "Atlas", location: "Lahore", dates: "Jun 2025 – Present", description: "Built resume review workflows." },
-        { role: "Volunteer", organization: "CareerTwin", period: "2024" },
+        { role: "Volunteer", organization: "FutureMaker", period: "2024" },
       ],
     }, "Education\nBachelor of Science in Computer Science\nExperience\nAWS Certified Developer Certificate") as typeof validSuggestions;
 
     expect(normalized.education).toBe("Bachelor's");
     expect(normalized.degree).toBe("Bachelor of Science in Computer Science");
     expect(normalized.experience).toContain("Software Engineering Intern at Atlas — Lahore | Jun 2025 – Present Built resume review workflows.");
-    expect(normalized.experience).toContain("Volunteer at CareerTwin — 2024");
+    expect(normalized.experience).toContain("Volunteer at FutureMaker — 2024");
     expect(normalized.experience).not.toContain("[object Object]");
     expect(normalized.careerStatus).toBe("working");
     expect(normalized.currentJob).toBe("Software Engineering Intern");
@@ -158,11 +158,11 @@ describe("Gemini resume extraction", () => {
   });
 
   it("merges only missing explicit qualification recovery details into the primary result", () => {
-    const primary = { ...validSuggestions, certifications: [{ name: "Cloud Practitioner", issuer: "", credentialId: "", issuedOn: "", link: "" }], languages: [], projects: [{ name: "CareerTwin", summary: "", link: "", technologies: [] }] };
+    const primary = { ...validSuggestions, certifications: [{ name: "Cloud Practitioner", issuer: "", credentialId: "", issuedOn: "", link: "" }], languages: [], projects: [{ name: "FutureMaker", summary: "", link: "", technologies: [] }] };
     const recovered = {
       certifications: [{ name: "Cloud Practitioner", issuer: "Amazon Web Services", credentialId: "AWS-123", issuedOn: "Jun 2025", link: "https://example.com/aws" }],
       languages: [{ name: "Urdu", proficiency: "Native" as const }],
-      projects: [{ name: "CareerTwin", summary: "Interview preparation platform", link: "https://example.com/careertwin", technologies: ["React"] }],
+      projects: [{ name: "FutureMaker", summary: "Interview preparation platform", link: "https://example.com/futuremaker", technologies: ["React"] }],
       fieldEvidence: { certifications: evidence, languages: evidence, projects: evidence },
     };
 

@@ -154,13 +154,13 @@ describe("JobRadarPage", () => {
     expect(practiceButtons.length).toBeGreaterThan(0);
   });
 
-  it("opens the CareerTwin Block A–H audit modal when clicking report button", () => {
+  it("opens the FutureMaker Block A–H audit modal when clicking report button", () => {
     render(<JobRadarPage />);
 
-    const reportButton = screen.getAllByRole("button", { name: /careertwin report/i })[0];
+    const reportButton = screen.getAllByRole("button", { name: /futuremaker report/i })[0];
     fireEvent.click(reportButton);
 
-    expect(screen.getByText(/CareerTwin Intelligence Audit/i)).toBeDefined();
+    expect(screen.getByText(/FutureMaker Intelligence Audit/i)).toBeDefined();
     expect(screen.getByText(/Block A: Role & Organization Snapshot/i)).toBeDefined();
     expect(screen.getByText(/Block G: Legitimacy & Verification Check/i)).toBeDefined();
   });

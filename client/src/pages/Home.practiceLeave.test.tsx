@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/_core/hooks/useAuth", () => ({
-  useAuth: () => ({ user: { name: "CareerTwin User", email: "user@example.com" }, loading: false, isAuthenticated: true, logout: mocks.logout }),
+  useAuth: () => ({ user: { name: "FutureMaker User", email: "user@example.com" }, loading: false, isAuthenticated: true, logout: mocks.logout }),
 }));
 vi.mock("@/contexts/ThemeContext", () => ({ useTheme: () => ({ theme: "dark", toggleTheme: vi.fn() }) }));
 vi.mock("@/lib/trpc", () => ({
@@ -45,7 +45,7 @@ describe("Practice leave confirmation", () => {
     fireEvent.change(companyInput, { target: { value: "Example Co" } });
     await waitFor(() => expect((companyInput as HTMLInputElement).value).toBe("Example Co"));
 
-    fireEvent.click(screen.getByRole("button", { name: "Return to CareerTwin homepage" }));
+    fireEvent.click(screen.getByRole("button", { name: "Return to FutureMaker homepage" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog.textContent).toContain("Leave preparation?");
     expect(dialog.textContent).toContain("not saved");
@@ -53,7 +53,7 @@ describe("Practice leave confirmation", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect((screen.getByLabelText(/Company name/i) as HTMLInputElement).value).toBe("Example Co");
 
-    fireEvent.click(screen.getByRole("button", { name: "Return to CareerTwin homepage" }));
+    fireEvent.click(screen.getByRole("button", { name: "Return to FutureMaker homepage" }));
     await screen.findByRole("dialog");
     fireEvent.click(screen.getByRole("button", { name: "Leave and discard" }));
     await waitFor(() => expect(screen.queryByLabelText(/Company name/i)).toBeNull());

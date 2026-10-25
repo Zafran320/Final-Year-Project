@@ -1,5 +1,5 @@
 /**
- * CareerTwin AI - Neural Male Voice TTS Streaming Audio Player Client
+ * FutureMaker AI - Neural Male Voice TTS Streaming Audio Player Client
  * Guarantees 100% deep, authoritative male neural voice playback directly in browser memory.
  */
 

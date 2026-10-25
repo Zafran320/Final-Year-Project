@@ -38,10 +38,10 @@ const STEPS = [
   },
   {
     id: 3,
-    title: "Synthesizing CareerTwin Intelligence",
+    title: "Synthesizing FutureMaker Intelligence",
     description: "Calibrating a bounded mock interview progression grounded in your verified evidence.",
     icon: Sparkles,
-    badge: "CareerTwin Engine",
+    badge: "FutureMaker Engine",
   },
 ];
 
@@ -306,7 +306,7 @@ export default function BeautifulAnalysisLoader({
                 }}
               >
                 <span className="flex items-center gap-1">
-                  <Terminal size={11} style={{ color: "var(--accent)" }} /> /v1/careertwin-analysis-stream
+                  <Terminal size={11} style={{ color: "var(--accent)" }} /> /v1/futuremaker-analysis-stream
                 </span>
                 <span>Latency budget: &lt;10s</span>
               </div>
@@ -326,7 +326,7 @@ export default function BeautifulAnalysisLoader({
                 [{elapsedSeconds >= 2 ? "2.20s" : "..."}] &gt; Parsing technical role keywords for &apos;{targetRole}&apos;...
               </p>
               <p style={{ color: activeStepIndex >= 2 ? "var(--accent)" : "var(--text-muted)" }}>
-                [{elapsedSeconds >= 4 ? "4.50s" : "..."}] &gt; CareerTwin AI bounded synthesis executing...
+                [{elapsedSeconds >= 4 ? "4.50s" : "..."}] &gt; FutureMaker AI bounded synthesis executing...
               </p>
             </div>
           )}

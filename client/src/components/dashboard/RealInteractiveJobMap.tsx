@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
+import { STORAGE_KEYS } from "@/lib/brand";
 
 declare global {
   interface Window {
@@ -650,7 +651,7 @@ export function RealInteractiveJobMap({
 
         try {
           localStorage.setItem(
-            "careertwin_user_geo",
+            STORAGE_KEYS.userGeo,
             JSON.stringify({
               lat: latitude,
               lng: longitude,
@@ -658,7 +659,7 @@ export function RealInteractiveJobMap({
               fullAddress: geoInfo.fullAddress,
             })
           );
-          localStorage.setItem("careertwin_user_location", geoInfo.cityName);
+          localStorage.setItem(STORAGE_KEYS.userLocation, geoInfo.cityName);
         } catch {}
 
         const dynamicDetectedCity: CityMarker = {
@@ -746,14 +747,14 @@ export function RealInteractiveJobMap({
 
           try {
             localStorage.setItem(
-              "careertwin_user_geo",
+              STORAGE_KEYS.userGeo,
               JSON.stringify({
                 lat: ipLoc.lat,
                 lng: ipLoc.lng,
                 cityName: ipLoc.cityName,
               })
             );
-            localStorage.setItem("careertwin_user_location", ipLoc.cityName);
+            localStorage.setItem(STORAGE_KEYS.userLocation, ipLoc.cityName);
           } catch {}
 
           const dynamicDetectedCity: CityMarker = {
@@ -808,7 +809,7 @@ export function RealInteractiveJobMap({
     hasLoadedInitialGeo.current = true;
 
     try {
-      const savedGeo = localStorage.getItem("careertwin_user_geo");
+      const savedGeo = localStorage.getItem(STORAGE_KEYS.userGeo);
       if (savedGeo) {
         const parsed = JSON.parse(savedGeo);
         if (parsed.lat && parsed.lng && parsed.cityName) {

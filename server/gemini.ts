@@ -765,7 +765,7 @@ function flattenPdfElements(value: unknown, output: string[] = [], citations: st
 
 async function extractPdfWithOpenDataLoader(buffer: Buffer): Promise<ParsedPdfEvidence | null> {
   try {
-    const directory = await mkdtemp(join(tmpdir(), "careertwin-resume-"));
+    const directory = await mkdtemp(join(tmpdir(), "futuremaker-resume-"));
     const inputPath = join(directory, "resume.pdf");
     try {
       await writeFile(inputPath, buffer);
@@ -877,7 +877,7 @@ export async function extractResumeSuggestions(buffer: Buffer, mimeType: string)
   if (buffer.length === 0) throw new Error("The uploaded resume is empty.");
 
   const today = new Date().toISOString().slice(0, 10);
-  const prompt = `You are a precision resume intake assistant for CareerTwin AI. Extract ALL information printed in the resume into valid JSON. Capture every single skill, project, certification, language, work experience entry, education details, and awards without omitting anything. Use only facts explicitly stated in the resume; do not invent details.
+  const prompt = `You are a precision resume intake assistant for FutureMaker AI. Extract ALL information printed in the resume into valid JSON. Capture every single skill, project, certification, language, work experience entry, education details, and awards without omitting anything. Use only facts explicitly stated in the resume; do not invent details.
 
 Return all fields:
 - fullName: Full candidate name from header
