@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Public demo experience. Add the final production sitemap URL after a custom domain is connected.

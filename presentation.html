@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="CareerTwin AI — an AI twin that tracks your career the way a mentor would. Constantly, honestly, and only on your behalf." />
+<meta name="theme-color" content="#0B0B0E" />
+<title>CareerTwin AI — Your career, mirrored.</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,460;9..144,560&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Preload the static room so the background paints immediately -->
+<link rel="preload" as="image" href="client/public/assets/room.jpg">
+
+<style>
+/* ============================================================
+   CareerTwin AI — hero site
+   Exact recreation of reference design from files.zip
+   ============================================================ */
+
+:root {
+  --bg:     #0B0B0E;
+  --panel:  #141317;
+  --line:   rgba(245,243,239,0.10);
+  --accent: #FF5A36;
+  --amber:  #F2A65A;
+  --text:   #F5F3EF;
+  --muted:  #9A9691;
+  --ease:   cubic-bezier(.16,1,.3,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: rgba(255,90,54,.30); color: var(--text); }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ── 1. Full-bleed character background ──────────────────── */
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.bg__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 900ms var(--ease);
+}
+
+.bg.is-loaded .bg__canvas { opacity: 1; }
+
+/* Readability scrim — heavier left where copy sits */
+.bg__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg,
+      rgba(11,11,14,.90)  0%,
+      rgba(11,11,14,.62) 30%,
+      rgba(11,11,14,.12) 56%,
+      rgba(11,11,14,.00) 78%),
+    linear-gradient(180deg,
+      rgba(11,11,14,.55)  0%,
+      rgba(11,11,14,.00) 22%,
+      rgba(11,11,14,.00) 74%,
+      rgba(11,11,14,.45) 100%);
+}
+
+/* Warm pointer glow */
+.glow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 640px; height: 640px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255,90,54,.15),
+    rgba(242,166,90,.05) 45%,
+    transparent 72%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transform: translate3d(-50%,-50%,0);
+  will-change: transform, opacity;
+  transition: opacity 500ms ease;
+}
+.glow.is-visible { opacity: 1; }
+
+/* ── 2. Chrome — topbar & footer ──────────────────────────── */
+
+.topbar, main, .footer { position: relative; z-index: 2; }
+
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px clamp(20px,5vw,64px);
+  transition: background 400ms ease, backdrop-filter 400ms ease, border-color 400ms ease;
+  border-bottom: 1px solid transparent;
+}
+
+.topbar.is-stuck {
+  background: rgba(11,11,14,.72);
+  backdrop-filter: blur(14px);
+  border-bottom-color: var(--line);
+}
+
+.brand {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: -.01em;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: .35em;
+}
+.brand__ai { color: var(--accent); }
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px,2.4vw,30px);
+}
+
+.topnav a {
+  font-size: .92rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 220ms ease;
+}
+.topnav a:hover { color: var(--text); }
+
+.topnav__cta {
+  color: var(--text) !important;
+  border: 1px solid var(--line);
+  padding: 8px 16px;
+  border-radius: 999px;
+  transition: border-color 260ms ease, background 260ms ease, transform 260ms var(--ease);
+}
+.topnav__cta:hover {
+  border-color: rgba(242,166,90,.6);
+  background: rgba(242,166,90,.08);
+  transform: translateY(-1px);
+}
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 26px clamp(20px,5vw,64px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: .84rem;
+  color: var(--muted);
+  background: rgba(11,11,14,.55);
+  backdrop-filter: blur(8px);
+}
+
+/* ── 3. Hero ──────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: clamp(96px,12vh,150px) clamp(20px,5vw,64px) clamp(60px,10vh,110px);
+}
+
+.hero__inner {
+  max-width: 44ch;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: enter 1000ms var(--ease) 200ms forwards;
+}
+
+@keyframes enter {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+
+.kicker::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255,90,54,.16);
+  animation: pulse 3200ms ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(255,90,54,.16); }
+  50%      { box-shadow: 0 0 0 8px rgba(255,90,54,.05); }
+}
+
+h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 460;
+  font-size: clamp(2.6rem,6.4vw,4.6rem);
+  line-height: 1.02;
+  letter-spacing: -.015em;
+  margin: 0 0 24px;
+}
+
+h1 em {
+  font-style: italic;
+  font-weight: 340;
+  color: var(--amber);
+}
+
+.lede {
+  font-size: clamp(1rem,1.9vw,1.16rem);
+  line-height: 1.62;
+  color: var(--muted);
+  margin: 0 0 36px;
+  max-width: 40ch;
+}
+.lede--tight { margin-bottom: 30px; }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px,2.5vw,26px);
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  font-size: .98rem;
+  font-weight: 600;
+  color: #17130F;
+  background: var(--text);
+  padding: 14px 28px;
+  border-radius: 999px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 300ms var(--ease), background 300ms ease, box-shadow 300ms ease;
+}
+.btn:hover {
+  background: var(--amber);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -12px rgba(242,166,90,.5);
+}
+.btn:active { transform: translateY(0); }
+
+.btn:focus-visible, .link:focus-visible, .topnav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.link {
+  font-size: .95rem;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 3px;
+  transition: border-color 260ms ease, color 260ms ease;
+}
+.link:hover { border-color: var(--amber); color: var(--amber); }
+
+.scroll-cue {
+  position: absolute;
+  left: clamp(20px,5vw,64px);
+  bottom: clamp(26px,5vh,44px);
+  margin: 0;
+  font-size: .78rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scroll-cue::after {
+  content: "";
+  width: 34px; height: 1px;
+  background: linear-gradient(90deg, var(--muted), transparent);
+  animation: cue 2600ms ease-in-out infinite;
+}
+
+@keyframes cue {
+  0%,100% { transform: translateX(0);   opacity: .6; }
+  50%      { transform: translateX(7px); opacity: 1; }
+}
+
+/* ── 4. Content panels ────────────────────────────────────── */
+
+.panel {
+  background: linear-gradient(180deg, rgba(11,11,14,.86), rgba(11,11,14,.94));
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--line);
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(60px,9vw,128px) clamp(20px,5vw,64px);
+}
+
+/* Scroll-reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 820ms var(--ease), transform 820ms var(--ease);
+}
+.reveal.is-in { opacity: 1; transform: translateY(0); }
+
+/* Section header */
+.head {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: clamp(20px,4vw,56px);
+  align-items: end;
+  margin-bottom: clamp(36px,5vw,64px);
+}
+.head__label { margin: 0; font-size: .9rem; color: var(--muted); }
+.head h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 460;
+  font-size: clamp(1.65rem,3.3vw,2.5rem);
+  line-height: 1.14;
+  letter-spacing: -.012em;
+  margin: 0;
+  max-width: 26ch;
+}
+
+/* Steps list */
+.steps {
+  list-style: none;
+  margin: 0; padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: clamp(14px,3vw,36px);
+  padding: clamp(22px,3.2vw,34px) 0;
+  border-bottom: 1px solid var(--line);
+  transition: background 400ms ease;
+}
+.step:hover { background: rgba(245,243,239,.02); }
+
+.step__num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.05rem;
+  color: var(--accent);
+  padding-top: .15em;
+}
+
+.step h3 { font-size: 1.14rem; font-weight: 600; margin: 0 0 8px; }
+.step p { margin: 0; color: var(--muted); line-height: 1.62; max-width: 56ch; }
+
+/* Pull quote */
+.panel--quote blockquote {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 460;
+  font-size: clamp(1.55rem,4.2vw,2.7rem);
+  line-height: 1.26;
+  letter-spacing: -.012em;
+  margin: 0;
+  max-width: 21ch;
+}
+.panel--quote blockquote em {
+  font-style: italic;
+  font-weight: 340;
+  color: var(--amber);
+}
+
+.attrib {
+  margin: 26px 0 0;
+  font-size: .94rem;
+  color: var(--muted);
+  max-width: 46ch;
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: clamp(20px,3.5vw,48px);
+}
+
+.stat { border-top: 1px solid var(--line); padding-top: 22px; }
+
+.stat__value {
+  display: block;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 460;
+  font-size: clamp(1.9rem,3.6vw,2.7rem);
+  line-height: 1;
+  letter-spacing: -.015em;
+  margin-bottom: 12px;
+}
+.stat__label {
+  display: block;
+  font-size: .92rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 30ch;
+}
+
+/* Closing CTA */
+.panel--close h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 460;
+  font-size: clamp(1.9rem,4.6vw,3.2rem);
+  line-height: 1.08;
+  letter-spacing: -.015em;
+  margin: 0 0 22px;
+  max-width: 18ch;
+}
+
+/* ── 5. Responsive ────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .head { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr; }
+  .stat__label { max-width: 46ch; }
+
+  .bg__scrim {
+    background:
+      linear-gradient(180deg,
+        rgba(11,11,14,.62)  0%,
+        rgba(11,11,14,.22) 26%,
+        rgba(11,11,14,.80) 66%,
+        rgba(11,11,14,.94) 100%);
+  }
+
+  .hero {
+    align-items: flex-end;
+    min-height: 100svh;
+    padding-bottom: clamp(72px,14vh,120px);
+  }
+  .hero__inner { max-width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .topnav a:not(.topnav__cta) { display: none; }
+  .step { grid-template-columns: 44px 1fr; }
+  .scroll-cue { display: none; }
+  .footer { flex-direction: column; align-items: flex-start; }
+}
+
+/* Touch devices can't hover, so glow is just cost. */
+@media (hover: none) { .glow { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .hero__inner { opacity: 1; transform: none; }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Full-bleed character canvas — sits behind everything, tracks cursor -->
+<div class="bg" id="bg" aria-hidden="true">
+  <canvas class="bg__canvas" id="bgCanvas"></canvas>
+  <div class="bg__scrim"></div>
+</div>
+
+<!-- Warm glow that follows the pointer -->
+<div class="glow" id="glow" aria-hidden="true"></div>
+
+<!-- Top navigation -->
+<header class="topbar" id="topbar">
+  <a class="brand" href="#top" aria-label="CareerTwin AI homepage">
+    CareerTwin<span class="brand__ai">AI</span>
+  </a>
+  <nav class="topnav" aria-label="Site navigation">
+    <a href="#how">How it works</a>
+    <a href="#why">Why a twin</a>
+    <a class="topnav__cta" href="#start">Get started</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero" id="top">
+    <div class="hero__inner">
+      <p class="kicker">Now reading the market for 12,400 people</p>
+      <h1>Your career,<br><em>mirrored.</em></h1>
+      <p class="lede">
+        An AI twin that watches the job market the way you&rsquo;d want a mentor to —
+        constantly, honestly, and only on your behalf.
+      </p>
+      <div class="actions">
+        <a class="btn" href="#start">Meet your twin</a>
+        <a class="link" href="#how">See how it works</a>
+      </div>
+    </div>
+    <p class="scroll-cue" aria-hidden="true">Scroll</p>
+  </section>
+
+  <!-- How it works -->
+  <section class="panel" id="how">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="head__label">How it works</p>
+        <h2>Three steps between you and a decision made with real information.</h2>
+      </div>
+
+      <ol class="steps reveal">
+        <li class="step">
+          <span class="step__num">01</span>
+          <div>
+            <h3>Connect your history</h3>
+            <p>Your resume, your roles, the offers you turned down and why. Your twin reads it once and keeps it.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">02</span>
+          <div>
+            <h3>It watches the market</h3>
+            <p>Postings, salary shifts, hiring freezes at the companies you&rsquo;ve named — checked daily, without you asking.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">03</span>
+          <div>
+            <h3>Answers arrive before you ask</h3>
+            <p>A nudge when something changes that actually affects you. Not a dashboard to check — a twin that checks for you.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Pull quote -->
+  <section class="panel panel--quote" id="why">
+    <div class="wrap reveal">
+      <blockquote>
+        Most career advice is generic because it&rsquo;s written before it knows <em>who you are.</em>
+      </blockquote>
+      <p class="attrib">Your twin starts from your actual history — not a persona built from averages.</p>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="panel" id="stats">
+    <div class="wrap">
+      <div class="stats reveal">
+        <div class="stat">
+          <span class="stat__value">Daily</span>
+          <span class="stat__label">Market scans run on your behalf, whether or not you open the app</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">4.2&times;</span>
+          <span class="stat__label">More relevant openings surfaced than a saved keyword search</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">Yours</span>
+          <span class="stat__label">Your history is never pooled, sold, or used to train a shared model</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="panel panel--close" id="start">
+    <div class="wrap reveal">
+      <h2>Stop guessing what your next move should be.</h2>
+      <p class="lede lede--tight">Two minutes to set up. Your twin does the watching from there.</p>
+      <div class="actions">
+        <a class="btn" href="#top">Meet your twin</a>
+        <a class="link" href="#how">Read how it works first</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>CareerTwin AI</span>
+  <span>Built for people between roles, not just looking for one.</span>
+</footer>
+
+<script>
+/* ============================================================
+   Frame-based character animation with cursor tracking.
+   Exact port of reference script.js from files.zip.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ── sheet geometry ────────────────────────────────────── */
+  var COLS = 12, ROWS = 6, FRAMES = 72;
+  var DEG_PER_FRAME = 360 / FRAMES;
+
+  // Animated strip bounds within the full frame (measured from motion analysis)
+  var STRIP_X = 463 / 1920;
+  var STRIP_W = 889 / 1920;
+  var ROOM_ASPECT = 16 / 9;
+
+  // Character eye position within the full frame
+  var EYE_X = 0.485;
+  var EYE_Y = 0.330;
+
+  /* ── elements ──────────────────────────────────────────── */
+  var canvas  = document.getElementById('bgCanvas');
+  var stageEl = document.getElementById('bg');
+  var glow    = document.getElementById('glow');
+  var topbar  = document.getElementById('topbar');
+
+  if (!canvas) return;
+
+  var ctx = canvas.getContext('2d', { alpha: false });
+
+  /* ── asset loading ─────────────────────────────────────── */
+  function useMobile() {
+    return window.innerWidth * Math.min(window.devicePixelRatio || 1, 2) <= 1200;
+  }
+
+  var room = null, sheet = null, idle = null;
+  var cellW = 0, cellH = 0;
+  var loadedTier = null;
+
+  function loadImage(src, cb) {
+    var img = new Image();
+    img.decoding = 'async';
+    img.onload  = function () { cb(img); };
+    img.onerror = function () { cb(null); };
+    img.src = src;
+  }
+
+  function reveal() {
+    if (stageEl) stageEl.classList.add('is-loaded');
+  }
+
+  // Asset base — works both opened from filesystem and served by Vite dev server
+  var ASSET_BASE = (function() {
+    // When served by Vite dev server, /assets/ is the correct public path
+    // When opened directly as a file, client/public/assets/ is the relative path
+    var loc = window.location.href;
+    if (loc.startsWith('http://localhost') || loc.startsWith('http://127.0.0.1') || loc.startsWith('https://')) {
+      return '/assets/';
+    }
+    return 'client/public/assets/';
+  })();
+
+  loadImage(ASSET_BASE + 'room.jpg', function (img) {
+    room = img;
+    reveal();
+  });
+
+  function loadTier() {
+    var tier = useMobile() ? 'mobile' : 'desktop';
+    if (tier === loadedTier) return;
+    loadedTier = tier;
+
+    loadImage(ASSET_BASE + 'char-' + tier + '.jpg', function (img) {
+      if (!img) return;
+      sheet = img;
+      cellW = img.naturalWidth  / COLS;
+      cellH = img.naturalHeight / ROWS;
+      reveal();
+    });
+
+    loadImage(ASSET_BASE + 'char-' + tier + '-idle.jpg', function (img) {
+      idle = img;
+      reveal();
+    });
+  }
+
+  loadTier();
+
+  /* ── canvas sizing (cover-fit, DPR-aware) ──────────────── */
+  var viewW=0, viewH=0, fitX=0, fitY=0, fitW=0, fitH=0;
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    viewW = window.innerWidth;
+    viewH = window.innerHeight;
+
+    canvas.width  = Math.max(1, Math.round(viewW * dpr));
+    canvas.height = Math.max(1, Math.round(viewH * dpr));
+    canvas.style.width  = viewW + 'px';
+    canvas.style.height = viewH + 'px';
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    if (viewW / viewH > ROOM_ASPECT) {
+      fitW = viewW;  fitH = viewW / ROOM_ASPECT;
+    } else {
+      fitH = viewH;  fitW = viewH * ROOM_ASPECT;
+    }
+    fitX = (viewW - fitW) / 2;
+    fitY = (viewH - fitH) / 2;
+
+    dirty = true;
+  }
+
+  resize();
+
+  /* ── tracking state ────────────────────────────────────── */
+  var angle = 0, angleVel = 0, targetAngle = 0;
+  var idleMix = 1;
+  var pointerActive = false;
+
+  // Critically damped spring — 90° turn lands in ~280ms, no overshoot
+  var STIFFNESS = 700, DAMPING = 53, IDLE_EASE = 4.5;
+  var PARALLAX = 16;
+  var targetOffX = 0, targetOffY = 0, offX = 0, offY = 0;
+  var glowTX = 0, glowTY = 0, glowX = 0, glowY = 0;
+  var dirty = true;
+
+  function onPointerMove(cx, cy) {
+    var eyeX = fitX + offX + EYE_X * fitW;
+    var eyeY = fitY + offY + EYE_Y * fitH;
+    var dx = cx - eyeX, dy = cy - eyeY;
+
+    if (Math.abs(dx) > .5 || Math.abs(dy) > .5) {
+      var deg = Math.atan2(dy, dx) * 180 / Math.PI;
+      targetAngle = ((deg - 90) + 360) % 360;
+    }
+
+    pointerActive = true;
+
+    var nx = Math.max(-1, Math.min(1, dx / (viewW / 2)));
+    var ny = Math.max(-1, Math.min(1, dy / (viewH / 2)));
+    targetOffX = -nx * PARALLAX;
+    targetOffY = -ny * PARALLAX * .6;
+
+    glowTX = cx;
+    glowTY = cy;
+    dirty = true;
+  }
+
+  function onPointerLeave() {
+    pointerActive = false;
+    targetOffX = targetOffY = 0;
+    if (glow) glow.classList.remove('is-visible');
+    dirty = true;
+  }
+
+  window.addEventListener('mousemove', function (e) {
+    onPointerMove(e.clientX, e.clientY);
+    if (glow) glow.classList.add('is-visible');
+  }, { passive: true });
+
+  window.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  window.addEventListener('touchend',    onPointerLeave);
+  window.addEventListener('touchcancel', onPointerLeave);
+  document.addEventListener('mouseleave', onPointerLeave);
+  window.addEventListener('blur', onPointerLeave);
+
+  var touchOnly = window.matchMedia('(hover: none)').matches;
+  var drift = 0;
+
+  /* ── drawing ───────────────────────────────────────────── */
+  function drawCell(index, alpha, sx, sy, sw, sh) {
+    if (!sheet || alpha <= .002) return;
+    var i = ((index % FRAMES) + FRAMES) % FRAMES;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(
+      sheet,
+      (i % COLS) * cellW, Math.floor(i / COLS) * cellH, cellW, cellH,
+      sx, sy, sw, sh
+    );
+  }
+
+  function render() {
+    var ox = fitX + offX, oy = fitY + offY;
+
+    // Static room
+    ctx.globalAlpha = 1;
+    if (room) {
+      ctx.drawImage(room, ox, oy, fitW, fitH);
+    } else {
+      ctx.fillStyle = '#0B0B0E';
+      ctx.fillRect(0, 0, viewW, viewH);
+    }
+
+    // Animated character strip
+    var sx = ox + STRIP_X * fitW;
+    var sw = STRIP_W * fitW;
+
+    if (idleMix < .998) {
+      var pos = angle / DEG_PER_FRAME;
+      var a = Math.floor(pos);
+      var blend = pos - a;
+      var trackAlpha = 1 - idleMix;
+
+      // Cross-dissolve between adjacent frames → looks continuous
+      drawCell(a,     trackAlpha,             sx, oy, sw, fitH);
+      if (blend > .002) drawCell(a + 1, trackAlpha * blend, sx, oy, sw, fitH);
+    }
+
+    if (idle && idleMix > .002) {
+      ctx.globalAlpha = idleMix;
+      ctx.drawImage(idle, sx, oy, sw, fitH);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  /* ── main loop ─────────────────────────────────────────── */
+  function shortestAngle(t, c) {
+    var d = (t - c) % 360;
+    if (d >  180) d -= 360;
+    if (d < -180) d += 360;
+    return d;
+  }
+
+  var last = null;
+
+  function tick(ts) {
+    if (last === null) last = ts;
+    var dt = Math.min((ts - last) / 1000, .05);
+    last = ts;
+
+    // Auto-drift on touch-only screens (no mouse)
+    if (touchOnly && !pointerActive) {
+      drift += dt * 12;
+      targetAngle = drift % 360;
+      pointerActive = true;
+      dirty = true;
+    }
+
+    var prevAngle = angle, prevMix = idleMix;
+
+    var d = shortestAngle(targetAngle, angle);
+    angleVel += (d * STIFFNESS - angleVel * DAMPING) * dt;
+    angle = (angle + angleVel * dt) % 360;
+    if (angle < 0) angle += 360;
+
+    idleMix += ((pointerActive ? 0 : 1) - idleMix) * Math.min(1, IDLE_EASE * dt);
+
+    offX += (targetOffX - offX) * .09;
+    offY += (targetOffY - offY) * .09;
+
+    if (Math.abs(angle - prevAngle) > .01 || Math.abs(idleMix - prevMix) > .001) dirty = true;
+
+    if (dirty) { render(); dirty = false; }
+
+    // Smooth glow position
+    if (glow) {
+      glowX += (glowTX - glowX) * .18;
+      glowY += (glowTY - glowY) * .18;
+      glow.style.transform =
+        'translate3d(' + glowX.toFixed(1) + 'px,' + glowY.toFixed(1) + 'px,0) translate(-50%,-50%)';
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+
+  /* ── resize ────────────────────────────────────────────── */
+  var rt = null;
+  window.addEventListener('resize', function () {
+    resize();
+    clearTimeout(rt);
+    rt = setTimeout(loadTier, 300);
+  });
+  window.addEventListener('orientationchange', function () {
+    setTimeout(resize, 120);
+  });
+
+  /* ── scroll-reveal ─────────────────────────────────────── */
+  var revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      });
+    }, { threshold: .15, rootMargin: '0px 0px -6% 0px' });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('is-in'); });
+  }
+
+  /* ── sticky topbar ─────────────────────────────────────── */
+  if (topbar) {
+    var stuck = false;
+    window.addEventListener('scroll', function () {
+      var should = window.scrollY > 24;
+      if (should !== stuck) { stuck = should; topbar.classList.toggle('is-stuck', stuck); }
+    }, { passive: true });
+  }
+
+})();
+</script>
+</body>
+</html>

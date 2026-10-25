@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="theme-color" content="#0B0B0F" />
+    <meta name="robots" content="index,follow" />
+    <meta name="author" content="CareerTwin AI" />
+    <meta name="description" content="CareerTwin AI is an adaptive interview-practice coach for Pakistani graduates. Turn your resume, target role, and answers into focused practice, clear feedback, and a personal career plan." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CareerTwin AI" />
+    <meta property="og:title" content="CareerTwin AI | Adaptive Interview Practice for Pakistani Graduates" />
+    <meta property="og:description" content="Build stronger interview answers through resume intelligence, mock practice, communication coaching, and a personal learning plan." />
+    <meta property="og:image" content="/branding/career-twin-logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CareerTwin AI | Adaptive Interview Practice" />
+    <meta name="twitter:image" content="/branding/career-twin-logo.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="image" href="/assets/room.jpg" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,460;9..144,560&family=Inter:wght@400;500;600;650;700&family=Space+Grotesk:wght@600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "CareerTwin AI",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "description": "An adaptive interview-practice and career-coaching application for Pakistani fresh graduates, combining resume intelligence, mock interviews, communication practice, IELTS speaking, technical preparation, and personal learning plans."
+      }
+    </script>
+    <script>
+      // Filter benign MediaPipe / TensorFlow Lite WASM C++ diagnostic logs from triggering false-alarm red errors in DevTools
+      (function() {
+        const origError = console.error;
+        console.error = function(...args) {
+          const first = typeof args[0] === "string" ? args[0] : "";
+          if (
+            first.includes("INFO: Created TensorFlow Lite") ||
+            first.includes("face_landmarker_graph.cc") ||
+            first.includes("gl_context.cc") ||
+            first.includes("Sets FaceBlendshapesGraph acceleration")
+          ) {
+            console.debug(...args);
+            return;
+          }
+          origError.apply(console, args);
+        };
+      })();
+    </script>
+    <title>CareerTwin AI | Adaptive Interview Practice for Pakistani Graduates</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

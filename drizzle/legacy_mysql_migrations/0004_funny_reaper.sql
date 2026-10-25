@@ -1,0 +1,1 @@
+ALTER TABLE `careerProfiles` ADD `verifiedDetails` text;

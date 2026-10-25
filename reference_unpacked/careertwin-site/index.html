@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="CareerTwin AI — an AI twin that tracks your career the way a mentor would. Constantly, honestly, and only on your behalf." />
+<meta name="theme-color" content="#0B0B0E" />
+<title>CareerTwin AI — Your career, mirrored.</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,460;9..144,560&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="preload" as="image" href="assets/room.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Full-bleed character background. Sits behind everything and tracks the cursor. -->
+<div class="bg" id="bg" aria-hidden="true">
+  <canvas class="bg__canvas" id="bgCanvas"></canvas>
+  <div class="bg__scrim"></div>
+</div>
+
+<!-- Warm glow that follows the pointer anywhere on the page -->
+<div class="glow" id="glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <span class="brand">CareerTwin<span class="brand__ai">AI</span></span>
+  <nav class="topnav">
+    <a href="#how">How it works</a>
+    <a href="#why">Why a twin</a>
+    <a class="topnav__cta" href="#start">Get started</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero" id="top">
+    <div class="hero__inner">
+      <p class="kicker">Now reading the market for 12,400 people</p>
+      <h1>Your career,<br><em>mirrored.</em></h1>
+      <p class="lede">
+        An AI twin that watches the job market the way you&rsquo;d want a mentor to —
+        constantly, honestly, and only on your behalf.
+      </p>
+      <div class="actions">
+        <a class="btn" href="#start">Meet your twin</a>
+        <a class="link" href="#how">See how it works</a>
+      </div>
+    </div>
+    <p class="scroll-cue" aria-hidden="true">Scroll</p>
+  </section>
+
+  <section class="panel" id="how">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="head__label">How it works</p>
+        <h2>Three steps between you and a decision made with real information.</h2>
+      </div>
+
+      <ol class="steps reveal">
+        <li class="step">
+          <span class="step__num">01</span>
+          <div>
+            <h3>Connect your history</h3>
+            <p>Your resume, your roles, the offers you turned down and why. Your twin reads it once and keeps it.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">02</span>
+          <div>
+            <h3>It watches the market</h3>
+            <p>Postings, salary shifts, hiring freezes at the companies you&rsquo;ve named — checked daily, without you asking.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num">03</span>
+          <div>
+            <h3>Answers arrive before you ask</h3>
+            <p>A nudge when something changes that actually affects you. Not a dashboard to check — a twin that checks for you.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel panel--quote" id="why">
+    <div class="wrap reveal">
+      <blockquote>
+        Most career advice is generic because it&rsquo;s written before it knows <em>who you are.</em>
+      </blockquote>
+      <p class="attrib">Your twin starts from your actual history — not a persona built from averages.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="stats">
+    <div class="wrap">
+      <div class="stats reveal">
+        <div class="stat">
+          <span class="stat__value">Daily</span>
+          <span class="stat__label">Market scans run on your behalf, whether or not you open the app</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">4.2&times;</span>
+          <span class="stat__label">More relevant openings surfaced than a saved keyword search</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">Yours</span>
+          <span class="stat__label">Your history is never pooled, sold, or used to train a shared model</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel panel--close" id="start">
+    <div class="wrap reveal">
+      <h2>Stop guessing what your next move should be.</h2>
+      <p class="lede lede--tight">Two minutes to set up. Your twin does the watching from there.</p>
+      <div class="actions">
+        <a class="btn" href="#top">Meet your twin</a>
+        <a class="link" href="#how">Read how it works first</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>CareerTwin AI</span>
+  <span class="footer__note">Built for people between roles, not just looking for one.</span>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
