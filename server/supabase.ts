@@ -1,8 +1,13 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { ENV } from "./_core/env";
 
 let _supabaseAdmin: SupabaseClient | null = null;
 let _supabaseClient: SupabaseClient | null = null;
+
+// Node 20 has no global WebSocket, and supabase-js refuses to construct a client
+// without one. Passing `ws` keeps the server working on Node 20 and 22+.
+const realtimeOptions = { transport: WebSocket as unknown as typeof globalThis.WebSocket };
 
 const resilientFetch: typeof fetch = async (input, init) => {
   const maxAttempts = 2;
@@ -44,6 +49,7 @@ export function getSupabaseAdmin(): SupabaseClient | null {
         global: {
           fetch: resilientFetch,
         },
+        realtime: realtimeOptions,
       });
     } catch (error) {
       console.warn("[Supabase] Failed to initialize Supabase admin client:", error);
@@ -63,6 +69,7 @@ export function getSupabaseClient(): SupabaseClient | null {
         global: {
           fetch: resilientFetch,
         },
+        realtime: realtimeOptions,
       });
     } catch (error) {
       console.warn("[Supabase] Failed to initialize Supabase public client:", error);

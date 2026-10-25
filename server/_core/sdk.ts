@@ -6,7 +6,7 @@ import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
-import { ENV } from "./env";
+import { ENV, resolveSessionSecret } from "./env";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -151,8 +151,7 @@ class SDKServer {
   }
 
   private getSessionSecret() {
-    const secret = ENV.cookieSecret || "careertwin-ai-jwt-secret-fallback-key-minimum-32-chars";
-    return new TextEncoder().encode(secret);
+    return new TextEncoder().encode(resolveSessionSecret());
   }
 
   /**

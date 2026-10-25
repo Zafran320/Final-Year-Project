@@ -245,4 +245,21 @@ describe("auth router with Supabase integration", () => {
     );
     expect(setCookies.length).toBe(1);
   });
+
+  it("rejects a forged token whose payload decodes but Supabase does not verify", async () => {
+    const { ctx, setCookies } = createTestContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const forgedPayload = Buffer.from(JSON.stringify({ sub: "victim-user-id", email: "victim@example.com" })).toString("base64url");
+    const forgedToken = `eyJhbGciOiJub25lIn0.${forgedPayload}.`;
+
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: { message: "invalid JWT" } });
+
+    await expect(caller.auth.syncSupabaseSession({ accessToken: forgedToken })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(mocks.getUser).toHaveBeenCalledWith(forgedToken);
+    expect(mocks.upsertUser).not.toHaveBeenCalled();
+    expect(setCookies.length).toBe(0);
+  });
 });

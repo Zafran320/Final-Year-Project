@@ -9,6 +9,7 @@ import { registerTtsRoutes } from "../ttsRouter";
 import { createGeminiLiveToken } from "../geminiLiveToken";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { createRateLimiter, requireAuth } from "./requestGuards";
 
 export function createApp(): Express {
   const app = express();
@@ -27,9 +28,11 @@ export function createApp(): Express {
     });
   }
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // tRPC carries base64 uploads (resume ≤7 MB, company prep up to 4 × 4.5 MB), so it
+  // gets a larger body limit; every other route stays small.
+  app.use(["/api/trpc", "/trpc"], express.json({ limit: "25mb" }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
   // Health check endpoint
   app.get(["/api/health", "/health"], (_req: Request, res: Response) => {
@@ -55,7 +58,8 @@ export function createApp(): Express {
   });
 
   // Ephemeral token endpoint for client-direct Gemini Live WebSockets (enables real-time speech on Vercel)
-  app.all(["/api/gemini-live-token", "/gemini-live-token"], async (_req: Request, res: Response) => {
+  const liveTokenLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+  app.all(["/api/gemini-live-token", "/gemini-live-token"], requireAuth, liveTokenLimiter, async (_req: Request, res: Response) => {
     const result = await createGeminiLiveToken();
     return res.status(result.status || (result.ok ? 200 : 500)).json(result);
   });

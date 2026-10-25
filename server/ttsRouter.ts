@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import type { Express, Request, Response } from "express";
 import { getGeminiApiKey } from "./gemini";
+import { createRateLimiter, requireAuth } from "./_core/requestGuards";
 
 // Curated 100% Male Neural Voice Catalog
 export const MALE_VOICE_CATALOG: Record<string, { id: string; name: string; lang: string; accent: string; description: string }> = {
@@ -195,9 +196,28 @@ function resolveEdgeVoice(text: string, language?: string, explicitVoice?: strin
   return "ur-PK-AsadNeural";
 }
 
+export const MAX_TTS_TEXT_LENGTH = 5_000;
+// edge-tts prosody values, e.g. "+0%", "-10%", "-2Hz", "+5Hz".
+const PROSODY_PATTERN = /^[+-]\d{1,3}(%|Hz)$/;
+
+/** Validates the speech request body; returns an error message or null. */
+export function validateSpeechRequest(body: Record<string, unknown>): string | null {
+  const { text, rate, pitch, volume } = body;
+  if (!text || typeof text !== "string" || !text.trim()) return "Text is required and cannot be empty.";
+  if (text.length > MAX_TTS_TEXT_LENGTH) return `Text must be at most ${MAX_TTS_TEXT_LENGTH} characters.`;
+  for (const [name, value] of Object.entries({ rate, pitch, volume })) {
+    if (value !== undefined && (typeof value !== "string" || !PROSODY_PATTERN.test(value))) {
+      return `Invalid ${name} value.`;
+    }
+  }
+  return null;
+}
+
 export function registerTtsRoutes(app: Express) {
+  const speechLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+
   // ─── 1. Neural Male TTS Generation Endpoint ─────────────────────────────────
-  app.post("/api/generate-speech", async (req: Request, res: Response) => {
+  app.post("/api/generate-speech", requireAuth, speechLimiter, async (req: Request, res: Response) => {
     try {
       const {
         text,
@@ -208,8 +228,9 @@ export function registerTtsRoutes(app: Express) {
         volume = "+0%",
       } = req.body;
 
-      if (!text || typeof text !== "string" || !text.trim()) {
-        res.status(400).json({ error: "Text is required and cannot be empty." });
+      const validationError = validateSpeechRequest(req.body ?? {});
+      if (validationError) {
+        res.status(400).json({ error: validationError });
         return;
       }
 
