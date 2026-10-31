@@ -44,108 +44,108 @@ export const PAKISTAN_MAJOR_CITIES: CityMarker[] = [
     name: "Islamabad",
     lat: 33.6844,
     lng: 73.0479,
-    jobCount: 48,
+    jobCount: 0,
     province: "Federal Capital",
-    topTech: ["React", "AI / ML", "Python", "Cloud"],
+    topTech: [],
   },
   {
     id: "Rawalpindi",
     name: "Rawalpindi",
     lat: 33.5651,
     lng: 73.0169,
-    jobCount: 32,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["Node.js", "Full Stack", "DevOps"],
+    topTech: [],
   },
   {
     id: "Wah Cantt",
     name: "Wah Cantt",
     lat: 33.7715,
     lng: 72.7511,
-    jobCount: 15,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["Full Stack", "React", "TypeScript"],
+    topTech: [],
   },
   {
     id: "Lahore",
     name: "Lahore",
     lat: 31.5204,
     lng: 74.3587,
-    jobCount: 65,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["Next.js", "Flutter", "TypeScript", "Django"],
+    topTech: [],
   },
   {
     id: "Karachi",
     name: "Karachi",
     lat: 24.8607,
     lng: 67.0011,
-    jobCount: 78,
+    jobCount: 0,
     province: "Sindh",
-    topTech: ["Fintech", "React", "Java", "Postgres"],
+    topTech: [],
   },
   {
     id: "Peshawar",
     name: "Peshawar",
     lat: 34.0151,
     lng: 71.5249,
-    jobCount: 18,
+    jobCount: 0,
     province: "KPK",
-    topTech: ["Mobile Apps", "UI/UX", "Python"],
+    topTech: [],
   },
   {
     id: "Faisalabad",
     name: "Faisalabad",
     lat: 31.4504,
     lng: 73.135,
-    jobCount: 22,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["PHP", "React Native", "SQL"],
+    topTech: [],
   },
   {
     id: "Gujranwala",
     name: "Gujranwala",
     lat: 32.1877,
     lng: 74.1945,
-    jobCount: 20,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["React", "TypeScript", "Node.js"],
+    topTech: [],
   },
   {
     id: "Sialkot",
     name: "Sialkot",
     lat: 32.4945,
     lng: 74.5229,
-    jobCount: 19,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["Full Stack", "React", "E-Commerce"],
+    topTech: [],
   },
   {
     id: "Abbottabad",
     name: "Abbottabad",
     lat: 34.1688,
     lng: 73.2215,
-    jobCount: 16,
+    jobCount: 0,
     province: "KPK",
-    topTech: ["Python", "React", "Cloud"],
+    topTech: [],
   },
   {
     id: "Multan",
     name: "Multan",
     lat: 30.1575,
     lng: 71.5249,
-    jobCount: 14,
+    jobCount: 0,
     province: "Punjab",
-    topTech: ["Web Dev", "WordPress", "React"],
+    topTech: [],
   },
   {
     id: "Quetta",
     name: "Quetta",
     lat: 30.1798,
     lng: 66.975,
-    jobCount: 12,
+    jobCount: 0,
     province: "Balochistan",
-    topTech: ["Frontend", "Python", "Data"],
+    topTech: [],
   },
 ];
 
@@ -248,9 +248,11 @@ export function RealInteractiveJobMap({
 
   const [customDetectedCity, setCustomDetectedCity] = useState<CityMarker | null>(null);
 
-  // Compute live job counts per city dynamically from real API data
-  const dynamicCityList = useMemo(() => {
+  // Per-city job count, most-requested skills and most common work mode, all from the live jobs.
+  const { dynamicCityList, cityWorkMode } = useMemo(() => {
     const counts: Record<string, number> = {};
+    const skills: Record<string, Record<string, number>> = {};
+    const modes: Record<string, Record<string, number>> = {};
 
     liveJobs.forEach((job) => {
       const loc = (job.location || "").toLowerCase();
@@ -260,19 +262,33 @@ export function RealInteractiveJobMap({
         const cLower = c.name.toLowerCase().replace(/[^a-z]/g, "");
         if (loc.includes(cLower) || cityKey.includes(cLower)) {
           counts[c.id] = (counts[c.id] || 0) + 1;
+          (job.coreSkills || []).forEach((skill: string) => {
+            skills[c.id] ??= {};
+            skills[c.id][skill] = (skills[c.id][skill] || 0) + 1;
+          });
+          if (job.workMode) {
+            modes[c.id] ??= {};
+            modes[c.id][job.workMode] = (modes[c.id][job.workMode] || 0) + 1;
+          }
         }
       });
     });
 
+    const topEntries = (tally: Record<string, number> | undefined, n: number) =>
+      Object.entries(tally ?? {}).sort((a, b) => b[1] - a[1]).slice(0, n).map(([name]) => name);
+
     const base = PAKISTAN_MAJOR_CITIES.map((c) => ({
       ...c,
       jobCount: counts[c.id] ?? 0,
+      topTech: topEntries(skills[c.id], 5),
     }));
+    const workModeByCity = Object.fromEntries(PAKISTAN_MAJOR_CITIES.map((c) => [c.id, topEntries(modes[c.id], 1)[0] ?? null]));
 
-    if (customDetectedCity && !base.some((c) => c.name.toLowerCase() === customDetectedCity.name.toLowerCase())) {
-      return [customDetectedCity, ...base];
-    }
-    return base;
+    const list =
+      customDetectedCity && !base.some((c) => c.name.toLowerCase() === customDetectedCity.name.toLowerCase())
+        ? [customDetectedCity, ...base]
+        : base;
+    return { dynamicCityList: list, cityWorkMode: workModeByCity as Record<string, string | null> };
   }, [liveJobs, customDetectedCity]);
 
   // Find closest Pakistani city from GPS
@@ -290,24 +306,11 @@ export function RealInteractiveJobMap({
     return { city: closest, distanceKm: minDistance };
   };
 
-  // Jobs nearby user calculation
-  const jobsNearbyCount = useMemo(() => {
-    if (!userCoords) return 0;
-    let count = 0;
-    liveJobs.forEach((job) => {
-      const locLower = (job.location || "").toLowerCase();
-      for (const [key, geo] of Object.entries(KNOWN_GEO_LOCATIONS)) {
-        if (locLower.includes(key)) {
-          const dist = calculateDistanceKm(userCoords.lat, userCoords.lng, geo.lat, geo.lng);
-          if (dist <= proximityRadiusKm) {
-            count++;
-            break;
-          }
-        }
-      }
-    });
-    return count;
-  }, [userCoords, liveJobs, proximityRadiusKm]);
+  // Jobs the server ranked as in the user's city or within 50 km of them.
+  const jobsNearbyCount = useMemo(
+    () => liveJobs.filter((job) => job.proximityTier === "same-city" || job.proximityTier === "nearby").length,
+    [liveJobs]
+  );
 
   // Initialize Real Google Maps / OpenStreetMap Layer (Once on Mount)
   useEffect(() => {
@@ -729,35 +732,38 @@ export function RealInteractiveJobMap({
               </div>
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-2xs">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">
-                  Jobs in Range
+                  Jobs Near You (≤ 50 km)
                 </span>
                 <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-                  {jobsNearbyCount}+ Live
+                  {jobsNearbyCount} Live
                 </span>
               </div>
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-2xs">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">
-                  Hiring Demand
+                  Live Jobs in {activeCityData.name}
                 </span>
                 <span className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1 mt-0.5">
-                  <TrendingUp size={14} className="text-emerald-500" /> High Index
+                  <TrendingUp size={14} className="text-emerald-500" /> {activeCityData.jobCount}
                 </span>
               </div>
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-2xs">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">
-                  Work Mode
+                  Most Common Work Mode
                 </span>
                 <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
-                  Hybrid &amp; Local
+                  {cityWorkMode[activeCityData.id] ?? "No listings yet"}
                 </span>
               </div>
             </div>
 
             <div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-2">
-                In-Demand Tech Stack in this Corridor:
+                Skills Most Requested in {activeCityData.name}'s Live Jobs:
               </span>
               <div className="flex flex-wrap gap-1.5">
+                {activeCityData.topTech.length === 0 && (
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">No skill data in the current listings.</span>
+                )}
                 {activeCityData.topTech.map((tech, i) => (
                   <span
                     key={i}

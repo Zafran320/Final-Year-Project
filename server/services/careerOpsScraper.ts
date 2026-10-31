@@ -557,6 +557,19 @@ export async function scrapeAndEvaluateLiveJobs(params: {
   const local = localRes.status === "fulfilled" ? localRes.value : { jobs: [], status: "error" as LocalJobSearchStatus, providers: [] as LocalJobProvider[] };
   const combined: ScrapedJob[] = [...local.jobs, ...(remoteRes.status === "fulfilled" ? remoteRes.value : [])];
 
+  // Providers often pin every posting in a city to the same city-centre point. Coordinates shared
+  // by several postings are a city pin, not an office, so they must not produce a "~2 km away".
+  const coordKey = (job: ScrapedJob) => (job.jobLat != null && job.jobLng != null ? `${job.jobLat},${job.jobLng}` : null);
+  const coordUses = new Map<string, number>();
+  for (const job of combined) {
+    const key = coordKey(job);
+    if (key) coordUses.set(key, (coordUses.get(key) ?? 0) + 1);
+  }
+  const hasOfficeCoords = (job: ScrapedJob) => {
+    const key = coordKey(job);
+    return key !== null && coordUses.get(key) === 1;
+  };
+
   const evaluatedList: EvaluatedCareerOpsJob[] = combined.map((job) => {
     const matchingSkills = job.coreSkills.filter((skill) => {
       const norm = skill.trim().toLowerCase().replace(/[^\w#+]/g, "");
@@ -575,11 +588,13 @@ export async function scrapeAndEvaluateLiveJobs(params: {
           candidateCity,
           candidateCoords: params.candidateCoords,
           jobCity,
-          jobCoords: job.jobLat != null && job.jobLng != null ? { lat: job.jobLat, lng: job.jobLng } : null,
+          jobCoords: hasOfficeCoords(job) ? { lat: job.jobLat!, lng: job.jobLng! } : null,
           jobIsRemote: remoteReachable,
           jobInPakistan: jobInCountry,
         });
-    const { tier, distanceKm } = proximity;
+    // Inside the user's own city, only an office-level location gives a meaningful distance.
+    const distanceKm = proximity.tier === "same-city" && !hasOfficeCoords(job) ? null : proximity.distanceKm;
+    const { tier } = proximity;
     const isLocationMatch = PROXIMITY_TIER_RANK[tier] <= PROXIMITY_TIER_RANK.remote;
 
     const basePct = Math.round((matchRatio * 0.55 + 0.35 + TIER_SCORE_BONUS[tier]) * 100);

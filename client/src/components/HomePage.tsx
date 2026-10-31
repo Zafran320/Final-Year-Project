@@ -6,7 +6,7 @@
  * - Multimodal Gemini Live 2.5 Voice Engine (sub-500ms bidirectional speech-to-speech)
  * - In-Browser 60 FPS MediaPipe Computer Vision Proctoring
  * - 4-Dimensional Adaptive ML Assessment Matrix (STAR scoring, cross-stage memory)
- * - Pakistan Job Radar & Market Intelligence (Karachi, Lahore, Islamabad salary benchmarks)
+ * - Location-aware Job Radar (live local jobs via Google for Jobs, ranked by distance from the user)
  * - Bilingual Roman Urdu & English code-switching normalization
  * - Instant Practice and Live Interview launch triggers
  */
@@ -409,13 +409,12 @@ export function HomePage({
                 <h3>ATS Resume &amp; Company Dossiers</h3>
                 <p>
                   Multi-format parsing (PDF, DOCX) extracting 25+ career fields. Cross-examines claimed skills in live dialogue
-                  and compiles preparation briefs for Systems Ltd, Arbisoft, 10Pearls, Netsol, Jazz, and HBL.
+                  and compiles a preparation brief for any company you choose.
                 </p>
                 <div className="ref-dossier-row">
-                  <span className="ref-dossier-pill">Systems Ltd <small>96% match</small></span>
-                  <span className="ref-dossier-pill">10Pearls <small>94% match</small></span>
-                  <span className="ref-dossier-pill">Arbisoft <small>92% match</small></span>
-                  <span className="ref-dossier-pill">Netsol <small>90% match</small></span>
+                  <span className="ref-dossier-pill">Your target company</span>
+                  <span className="ref-dossier-pill">Your CV</span>
+                  <span className="ref-dossier-pill">The job description</span>
                 </div>
                 <div className="ref-tags">
                   <span className="ref-tag">25+ Structured Fields</span>
@@ -492,7 +491,7 @@ export function HomePage({
               <span className="ref-section-badge ref-section-badge--cyan">Market Intelligence</span>
               <h2>Pakistan Job Radar &amp; <span className="ref-title-gradient--cyan">Geospatial Intelligence</span></h2>
               <p className="ref-head__sub">
-                Live scrapers across global and local boards, city cluster salary bands, and instant tailored mock interview launches.
+                Live job listings for your city, ranked by real distance from you, with one-click mock interview practice.
               </p>
             </div>
 
@@ -500,38 +499,38 @@ export function HomePage({
               <article className="ref-card">
                 <div className="ref-card__top">
                   <span className="ref-card__num">01</span>
-                  <span className="ref-tag ref-tag--cyan">6 Scrapers</span>
+                  <span className="ref-tag ref-tag--cyan">Live Sources</span>
                 </div>
-                <h3>Multi-Source Live Scrapers</h3>
+                <h3>Live Local &amp; Remote Jobs</h3>
                 <p>
-                  Automated ingestion engines fetch verified engineering and product openings from Arbeitnow, Jobicy, RemoteOK, Remotive, We Work Remotely, and The Muse in real time.
+                  Real openings in your city from LinkedIn, Indeed, Rozee.pk and Glassdoor via Google for Jobs, plus remote roles from Remotive, RemoteOK, Arbeitnow, Jobicy, The Muse and We Work Remotely.
                 </p>
                 <div className="ref-card-hud ref-card-hud--cyan">
-                  <span className="ref-hud-text">&bull; Live Engines: Arbeitnow &bull; RemoteOK &bull; Jobicy</span>
+                  <span className="ref-hud-text">&bull; Local: Google for Jobs &bull; Remote: public job boards</span>
                 </div>
                 <div className="ref-tags">
-                  <span className="ref-tag">Arbeitnow</span>
-                  <span className="ref-tag">RemoteOK</span>
-                  <span className="ref-tag">Remotive</span>
+                  <span className="ref-tag">Google for Jobs</span>
+                  <span className="ref-tag">LinkedIn</span>
+                  <span className="ref-tag">Remote Boards</span>
                 </div>
               </article>
 
               <article className="ref-card">
                 <div className="ref-card__top">
                   <span className="ref-card__num">02</span>
-                  <span className="ref-tag ref-tag--green">Geospatial Hubs</span>
+                  <span className="ref-tag ref-tag--green">Your Location</span>
                 </div>
-                <h3>Pakistan City Cluster Map</h3>
+                <h3>Location-Aware Ranking</h3>
                 <p>
-                  Interactive geospatial mapping of software houses and tech hubs across Karachi, Lahore, and Islamabad with Haversine distance calculations and local salary benchmarks.
+                  Detects your city from your device&rsquo;s GPS and ranks jobs by real distance: your city first, then nearby cities, your province, remote roles, and the rest of the country.
                 </p>
                 <div className="ref-card-hud">
-                  <span className="ref-hud-text">📍 Karachi (180+) &bull; 📍 Lahore (145+) &bull; 📍 Islamabad (95+)</span>
+                  <span className="ref-hud-text">📍 Your city &rarr; within 50 km &rarr; your province &rarr; remote</span>
                 </div>
                 <div className="ref-tags">
-                  <span className="ref-tag">Leaflet Hubs</span>
+                  <span className="ref-tag">GPS Location</span>
                   <span className="ref-tag">Haversine Distance</span>
-                  <span className="ref-tag">PKR Salary Bands</span>
+                  <span className="ref-tag">Live Map</span>
                 </div>
               </article>
 
@@ -547,7 +546,7 @@ export function HomePage({
                 {onNavigate && (
                   <button className="ref-card-btn" type="button" onClick={() => onNavigate("jobs")}>
                     <Compass size={13} />
-                    Explore 400+ Live Jobs &rarr;
+                    Explore Live Jobs &rarr;
                   </button>
                 )}
                 <div className="ref-tags" style={{ marginTop: '14px' }}>
