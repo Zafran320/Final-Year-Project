@@ -1,6 +1,6 @@
-# Setting Up Supabase for CareerTwin AI
+# Setting Up Supabase for FutureMaker AI
 
-CareerTwin AI's backend is powered by **Supabase PostgreSQL** via Drizzle ORM and the Supabase JavaScript SDK.
+FutureMaker AI's backend is powered by **Supabase PostgreSQL** via Drizzle ORM and the Supabase JavaScript SDK.
 
 Follow these quick steps to connect your Supabase project:
 
@@ -9,7 +9,7 @@ Follow these quick steps to connect your Supabase project:
 ## 1. Create a Supabase Project
 1. Log in to [Supabase](https://supabase.com/).
 2. Click **New Project** and select your organization.
-3. Name your project (e.g. `careertwin-ai`) and set a strong database password.
+3. Name your project (e.g. `futuremaker-ai`) and set a strong database password.
 
 ---
 
@@ -45,7 +45,7 @@ You have two simple options to initialize the tables in Supabase:
 ### Option A: Using the Supabase Dashboard SQL Editor (Fastest)
 1. Go to your Supabase Dashboard -> **SQL Editor**.
 2. Click **New Query**.
-3. Open [`supabase/schema.sql`](file:///home/mirza-ahmed-hassan/Downloads/careertwin-ai-main/supabase/schema.sql) from this repository, copy the entire SQL script, and paste it into the editor.
+3. Open [`supabase/schema.sql`](../supabase/schema.sql) from this repository, copy the entire SQL script, and paste it into the editor.
 4. Click **Run**.
 5. You're done! The `users` and `careerProfiles` tables and unique constraints are now created.
 

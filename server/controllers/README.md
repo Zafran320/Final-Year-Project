@@ -1,6 +1,6 @@
 # Layer: Routes / Presentation (Server)
 
-This folder contains **REST route handlers** for the CareerTwin AI server.
+This folder contains **REST route handlers** for the FutureMaker AI server.
 
 The tRPC routers live in `../api/` (Hono/Express tRPC adapter).  
 Plain REST endpoints (non-tRPC) live here.

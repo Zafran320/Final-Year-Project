@@ -5,6 +5,9 @@ import { registerGeminiLiveProxy } from "../geminiLiveProxy";
 import { serveStatic, setupVite } from "./vite";
 import { app } from "./app";
 import { resolveSessionSecret } from "./env";
+import { reportLocationServiceStatus } from "../services/location";
+import { isJSearchConfigured } from "../services/jsearchProvider";
+import { isSerpApiConfigured } from "../services/serpapiProvider";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -50,6 +53,10 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    const jobProviders = [isJSearchConfigured() && "JSearch", isSerpApiConfigured() && "SerpApi"].filter(Boolean);
+    if (jobProviders.length > 0) console.log(`[Jobs] Live job search connected: ${jobProviders.join(" + ")}`);
+    else console.warn("[Jobs] No job search API key set (JSEARCH_API_KEY / SERPAPI_API_KEY); Job Radar will show a 'connect API key' message.");
+    void reportLocationServiceStatus();
   });
 }
 

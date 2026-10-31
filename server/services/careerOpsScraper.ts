@@ -1,21 +1,30 @@
+import {
+  DEFAULT_LOCATION_LABEL,
+  PROXIMITY_TIER_RANK,
+  classifyProximity,
+  findKnownCity,
+  getCityByKey,
+  type KnownCity,
+  type ProximityTier,
+} from "../../shared/pakistanCities";
+import { fetchLocalJobs, isLocalJobSearchConfigured, type LocalJobSearchStatus, type LocalJobProvider } from "./localJobs";
+
 /**
- * Career-Ops Intelligent Job Aggregator & Multi-Board Live Scraper Engine
- * Scans live job boards (Meta, LinkedIn, Indeed, Upwork, RemoteOK, Remotive, Greenhouse, Lever, Ashby, Local Tech Hubs)
- * and evaluates listings against the candidate's verified profile, skills, and exact location.
+ * Live job aggregator. Every listing comes from a real feed at request time:
+ * - local jobs for the candidate's city from JSearch and SerpApi together (both read Google for Jobs:
+ *   LinkedIn, Indeed, Rozee.pk, Glassdoor…), merged and de-duplicated
+ * - remote jobs from public boards (Remotive, RemoteOK, Arbeitnow, Jobicy, The Muse, We Work Remotely)
+ * Nothing is hard-coded; listings are ranked by distance from the candidate, then skill match.
  */
 
-export type JobPlatformSource =
-  | "meta"
-  | "linkedin"
-  | "indeed"
-  | "upwork"
-  | "remoteok"
-  | "github"
-  | "fiverr"
-  | "arbeitnow"
-  | "remotive"
-  | "themuse"
-  | "jobicy";
+export const JOB_PLATFORM_SOURCES = [
+  "linkedin", "indeed", "glassdoor", "rozee", "googlejobs",
+  "remotive", "remoteok", "arbeitnow", "jobicy", "themuse", "weworkremotely",
+] as const;
+
+export type JobPlatformSource = (typeof JOB_PLATFORM_SOURCES)[number];
+
+export const SALARY_NOT_DISCLOSED = "Salary not disclosed";
 
 export type ScrapedJob = {
   id: string;
@@ -33,14 +42,19 @@ export type ScrapedJob = {
   whyRecommended: string;
   talkingPoints: string[];
   sourceAts: "greenhouse" | "lever" | "ashby" | "remotive" | "direct-portal";
+  postedAt?: string | null;
+  jobLat?: number | null;
+  jobLng?: number | null;
 };
 
 export type EvaluatedCareerOpsJob = ScrapedJob & {
+  proximityTier: ProximityTier;
+  distanceKm: number | null;
   isLocationMatch: boolean;
   locationMatchReason: string;
   matchedSkills: string[];
   matchScore: number; // 1.0 - 5.0
-  matchPercentage: number; // 70 - 99%
+  matchPercentage: number;
   dimensions: {
     technicalFit: number;
     seniorityFit: number;
@@ -58,565 +72,6 @@ export type EvaluatedCareerOpsJob = ScrapedJob & {
     blockH: string; // Tailored Application Strategy
   };
 };
-
-/**
- * Curated live repository of top hiring companies across Pakistan & Global Tech Titans
- */
-const BASE_COMPANIES_RAW = [
-  // ─── Meta / Facebook Careers (Global Remote & Regional Tech Hubs) ───
-  {
-    id: "co-meta-01",
-    company: "Meta",
-    city: "Remote",
-    role: "Frontend Engineer (React Core & UI Architecture)",
-    mode: "Remote" as const,
-    sal: "$115,000 – $185,000 / yr",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "JavaScript", "GraphQL", "UI Architecture"],
-    extra: ["Relay", "Next.js", "Jest", "Web Performance"],
-    plats: ["meta", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.metacareers.com/jobs?q=Frontend%20Engineer",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-meta-02",
-    company: "Meta (WhatsApp Platform)",
-    city: "Remote",
-    role: "Full Stack Systems Developer (High Concurrency & Real-Time Web)",
-    mode: "Remote" as const,
-    sal: "$120,000 – $190,000 / yr",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "WebSockets"],
-    extra: ["Erlang", "Distributed Systems", "Docker", "Security"],
-    plats: ["meta", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.metacareers.com/jobs?q=WhatsApp",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-meta-03",
-    company: "Meta (Instagram Core UI)",
-    city: "Remote",
-    role: "Product Software Engineer (Design Systems & Micro-Interactions)",
-    mode: "Remote" as const,
-    sal: "$110,000 – $175,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "CSS", "Tailwind CSS", "Figma"],
-    extra: ["Framer Motion", "GraphQL", "Accessibility"],
-    plats: ["meta", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.metacareers.com/jobs?q=Instagram",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-meta-04",
-    company: "Meta AI",
-    city: "Remote",
-    role: "AI Application Engineer (Llama Ecosystem & Developer Experience)",
-    mode: "Remote" as const,
-    sal: "$130,000 – $210,000 / yr",
-    exp: "Senior" as const,
-    core: ["Python", "TypeScript", "React", "PyTorch", "FastAPI"],
-    extra: ["Vector Search", "LLM Fine-Tuning", "Docker"],
-    plats: ["meta", "linkedin", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.metacareers.com/jobs?q=AI%20Engineer",
-    ats: "direct-portal" as const,
-  },
-
-  // ─── Upwork High-Paying Contracts & Client Projects ───
-  {
-    id: "co-upwork-01",
-    company: "Upwork Enterprise Clients",
-    city: "Remote",
-    role: "Senior Full-Stack Consultant (React, Node.js & AI Integrations)",
-    mode: "Remote" as const,
-    sal: "$50 – $95 / hr",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "Node.js", "Python", "SQL"],
-    extra: ["FastAPI", "Next.js", "Docker", "LLM APIs"],
-    plats: ["upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.upwork.com/nx/search/jobs/?q=Full%20Stack%20Developer",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-upwork-02",
-    company: "Upwork Top Rated Plus Client",
-    city: "Remote",
-    role: "Frontend React / Next.js Specialist (Dashboard & SaaS UI)",
-    mode: "Remote" as const,
-    sal: "$45 – $80 / hr",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Next.js", "Tailwind CSS", "REST APIs"],
-    extra: ["Framer Motion", "Redux", "Zustand"],
-    plats: ["upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.upwork.com/nx/search/jobs/?q=React%20Developer",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-upwork-03",
-    company: "Upwork AI Startup Contract",
-    city: "Remote",
-    role: "Full-Stack AI Application Engineer (LangChain & Gemini API)",
-    mode: "Remote" as const,
-    sal: "$55 – $100 / hr",
-    exp: "Senior" as const,
-    core: ["Python", "TypeScript", "React", "FastAPI", "Node.js"],
-    extra: ["Vector Databases", "Docker", "PostgreSQL"],
-    plats: ["upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.upwork.com/nx/search/jobs/?q=AI%20Engineer",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-upwork-04",
-    company: "Upwork US Fintech Client",
-    city: "Remote",
-    role: "Node.js & TypeScript Backend Specialist (Payment Rails)",
-    mode: "Remote" as const,
-    sal: "$50 – $85 / hr",
-    exp: "Senior" as const,
-    core: ["Node.js", "TypeScript", "PostgreSQL", "Stripe API", "AWS"],
-    extra: ["Docker", "Redis", "Microservices"],
-    plats: ["upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.upwork.com/nx/search/jobs/?q=Node%20Developer",
-    ats: "direct-portal" as const,
-  },
-
-  // ─── Pakistan Tech Hubs (Lahore, Islamabad, Rawalpindi, Wah Cantt, Karachi, Peshawar, Faisalabad, Multan, Gujranwala, Sialkot, Abbottabad) ───
-  {
-    id: "co-pk-01",
-    company: "Capregsoft",
-    city: "Lahore",
-    role: "Full Stack Engineer (Core Platform & AI Systems)",
-    mode: "Hybrid" as const,
-    sal: "PKR 260,000 – 430,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "Docker", "PostgreSQL"],
-    plats: ["linkedin", "indeed", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://capregsoft.com",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-02",
-    company: "Systems Limited",
-    city: "Lahore",
-    role: "Enterprise Solutions Developer (Cloud & Web)",
-    mode: "Hybrid" as const,
-    sal: "PKR 280,000 – 480,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["Node.js", "TypeScript", "SQL", "React", "Cloud"],
-    extra: ["Azure", "Microservices", "CI/CD"],
-    plats: ["linkedin", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.systemsltd.com/careers",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-03",
-    company: "Arbisoft",
-    city: "Lahore",
-    role: "Software Engineer (Web & Distributed Systems)",
-    mode: "Hybrid" as const,
-    sal: "PKR 300,000 – 550,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["Python", "React", "TypeScript", "SQL", "Django"],
-    extra: ["AWS", "Docker", "FastAPI"],
-    plats: ["linkedin", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://arbisoft.com/careers",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-04",
-    company: "Educative, Inc.",
-    city: "Lahore",
-    role: "Full Stack Engineer (Interactive Learning Platform)",
-    mode: "Hybrid" as const,
-    sal: "PKR 320,000 – 520,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "Python", "SQL"],
-    extra: ["Docker", "Kubernetes", "AWS"],
-    plats: ["linkedin", "indeed", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.educative.io/careers",
-    ats: "lever" as const,
-  },
-  {
-    id: "co-pk-05",
-    company: "SadaPay",
-    city: "Islamabad",
-    role: "Fintech Platform Engineer (Modern Banking Core)",
-    mode: "Hybrid" as const,
-    sal: "PKR 330,000 – 580,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["TypeScript", "Node.js", "PostgreSQL", "AWS", "REST APIs"],
-    extra: ["Docker", "Kubernetes", "Redis"],
-    plats: ["linkedin", "indeed", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://sadapay.pk/careers/",
-    ats: "lever" as const,
-  },
-  {
-    id: "co-pk-06",
-    company: "Motive (KeepTruckin)",
-    city: "Islamabad",
-    role: "IoT & Fleet Management Full Stack Engineer",
-    mode: "Hybrid" as const,
-    sal: "PKR 370,000 – 620,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "AWS"],
-    extra: ["Docker", "Kubernetes", "Kafka"],
-    plats: ["linkedin", "indeed", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://gomotive.com/company/careers/",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-pk-07",
-    company: "Contour Software",
-    city: "Rawalpindi",
-    role: "Enterprise Software Developer (Constellation Software Core)",
-    mode: "Hybrid" as const,
-    sal: "PKR 310,000 – 540,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["TypeScript", "React", "SQL", "Node.js", "C#"],
-    extra: [".NET Core", "Azure", "REST APIs"],
-    plats: ["linkedin", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://contour-software.com/careers/",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-08",
-    company: "Discretelogix",
-    city: "Islamabad",
-    role: "Web Application Specialist & UI Architect",
-    mode: "Hybrid" as const,
-    sal: "PKR 240,000 – 400,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "Express", "Git"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://discretelogix.com/careers/",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-09",
-    company: "Vintro Tech Hub",
-    city: "Wah Cantt",
-    role: "Full Stack Web & Cloud Applications Engineer",
-    mode: "Hybrid" as const,
-    sal: "PKR 220,000 – 380,000 / mo",
-    exp: "Entry / Junior" as const,
-    core: ["React", "TypeScript", "Node.js", "Tailwind CSS", "SQL"],
-    extra: ["Next.js", "Express", "Docker"],
-    plats: ["indeed", "linkedin", "upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Web+Developer&l=Wah+Cantt",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-10",
-    company: "Taxila IT Valley",
-    city: "Taxila",
-    role: "Frontend Software Engineer (React / JavaScript)",
-    mode: "Hybrid" as const,
-    sal: "PKR 210,000 – 360,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "JavaScript", "Tailwind CSS", "REST APIs", "Git"],
-    extra: ["TypeScript", "Next.js", "Redux"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Taxila",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-11",
-    company: "10Pearls",
-    city: "Karachi",
-    role: "Senior Web Solutions Architect",
-    mode: "Hybrid" as const,
-    sal: "PKR 350,000 – 600,000 / mo",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "Node.js", "Cloud", "REST APIs"],
-    extra: ["GraphQL", "Serverless", "Security"],
-    plats: ["linkedin", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://10pearls.com/careers/",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-12",
-    company: "NayaPay",
-    city: "Karachi",
-    role: "Mobile & Full Stack Developer",
-    mode: "Hybrid" as const,
-    sal: "PKR 260,000 – 440,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React Native", "TypeScript", "React", "Node.js", "SQL"],
-    extra: ["GraphQL", "Tailwind CSS", "Jest"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.nayapay.com/careers",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-13",
-    company: "Bazaar Technologies",
-    city: "Karachi",
-    role: "Software Engineer (Supply Chain & B2B Web)",
-    mode: "Hybrid" as const,
-    sal: "PKR 310,000 – 530,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["Python", "React", "TypeScript", "PostgreSQL", "Django"],
-    extra: ["FastAPI", "Docker", "AWS"],
-    plats: ["linkedin", "indeed", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://bazaartech.com/careers",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-pk-14",
-    company: "VentureDive",
-    city: "Lahore",
-    role: "Frontend Engineer (Mobile & React Ecosystem)",
-    mode: "Hybrid" as const,
-    sal: "PKR 240,000 – 390,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Tailwind CSS", "Redux", "REST APIs"],
-    extra: ["React Native", "Next.js", "Jest"],
-    plats: ["linkedin", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.venturedive.com/careers/",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-pk-15",
-    company: "Devsinc",
-    city: "Lahore",
-    role: "Full Stack Engineer (Scalable Web Products)",
-    mode: "Hybrid" as const,
-    sal: "PKR 250,000 – 420,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "Node.js", "TypeScript", "PostgreSQL", "GraphQL"],
-    extra: ["Next.js", "Tailwind CSS", "Docker"],
-    plats: ["linkedin", "github", "indeed"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://devsinc.com/careers",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-16",
-    company: "Peshawar Software Park",
-    city: "Peshawar",
-    role: "Full Stack Web Developer (KPITB Tech Incubator)",
-    mode: "Hybrid" as const,
-    sal: "PKR 220,000 – 370,000 / mo",
-    exp: "Entry / Junior" as const,
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "MongoDB", "Git"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://kpitb.gov.pk",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-17",
-    company: "Algoris Tech",
-    city: "Faisalabad",
-    role: "Software Engineer (Web Applications)",
-    mode: "Hybrid" as const,
-    sal: "PKR 230,000 – 380,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "REST APIs"],
-    extra: ["Tailwind CSS", "Next.js", "Docker"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Faisalabad",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-18",
-    company: "Multan Tech Hub",
-    city: "Multan",
-    role: "Full Stack Developer (Web & Cloud Platforms)",
-    mode: "Hybrid" as const,
-    sal: "PKR 220,000 – 360,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "SQL", "PHP"],
-    extra: ["Laravel", "Next.js", "Docker"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Full+Stack&l=Multan",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-19",
-    company: "Gujranwala Software Labs",
-    city: "Gujranwala",
-    role: "Frontend Engineer (React & TypeScript)",
-    mode: "Hybrid" as const,
-    sal: "PKR 220,000 – 370,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Tailwind CSS", "Node.js", "REST APIs"],
-    extra: ["Next.js", "Redux", "Git"],
-    plats: ["indeed", "linkedin", "upwork"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=React+Developer&l=Gujranwala",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-20",
-    company: "Sialkot Export IT Center",
-    city: "Sialkot",
-    role: "Web Applications Developer (E-Commerce & Portals)",
-    mode: "Hybrid" as const,
-    sal: "PKR 230,000 – 380,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "SQL"],
-    extra: ["Next.js", "Tailwind CSS", "REST APIs"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Software+Developer&l=Sialkot",
-    ats: "direct-portal" as const,
-  },
-  {
-    id: "co-pk-21",
-    company: "Abbottabad Innovation Park",
-    city: "Abbottabad",
-    role: "Full Stack Engineer (Cloud & Web Services)",
-    mode: "Hybrid" as const,
-    sal: "PKR 210,000 – 360,000 / mo",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Python", "SQL", "Node.js"],
-    extra: ["FastAPI", "Docker", "Tailwind CSS"],
-    plats: ["indeed", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Abbottabad",
-    ats: "direct-portal" as const,
-  },
-
-  // ─── Global Remote Leaders & Tech Titans (100% Remote / Worldwide) ───
-  {
-    id: "co-gl-01",
-    company: "Supabase",
-    city: "Remote",
-    role: "Full Stack Engineer (Real-Time Cloud & Developer Platform)",
-    mode: "Remote" as const,
-    sal: "$85,000 – $135,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["TypeScript", "React", "Node.js", "PostgreSQL", "REST APIs"],
-    extra: ["GraphQL", "Python", "FastAPI"],
-    plats: ["remoteok", "github", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://supabase.com/careers",
-    ats: "ashby" as const,
-  },
-  {
-    id: "co-gl-02",
-    company: "Linear",
-    city: "Remote",
-    role: "Frontend Engineer (Design Systems & Micro-Interactions)",
-    mode: "Remote" as const,
-    sal: "$95,000 – $150,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Tailwind CSS", "UI/UX", "Next.js"],
-    extra: ["Framer Motion", "Figma", "Accessibility"],
-    plats: ["linkedin", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://linear.app/careers",
-    ats: "ashby" as const,
-  },
-  {
-    id: "co-gl-03",
-    company: "Vercel Enterprise",
-    city: "Remote",
-    role: "Backend & Systems Infrastructure Engineer",
-    mode: "Remote" as const,
-    sal: "$90,000 – $145,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["Node.js", "Python", "SQL", "Docker", "TypeScript"],
-    extra: ["AWS", "Redis", "Microservices"],
-    plats: ["remoteok", "github", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://vercel.com/careers",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-gl-04",
-    company: "Stripe",
-    city: "Remote",
-    role: "API Infrastructure & Integrations Developer",
-    mode: "Remote" as const,
-    sal: "$110,000 – $170,000 / yr",
-    exp: "Senior" as const,
-    core: ["TypeScript", "Node.js", "Ruby", "PostgreSQL", "REST APIs"],
-    extra: ["Security", "Docker", "Microservices"],
-    plats: ["linkedin", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://stripe.com/jobs",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-gl-05",
-    company: "GitHub",
-    city: "Remote",
-    role: "Developer Tools & Next-Gen Web UI Engineer",
-    mode: "Remote" as const,
-    sal: "$95,000 – $155,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Ruby on Rails", "Tailwind CSS", "GraphQL"],
-    extra: ["Accessibility", "Jest", "Docker"],
-    plats: ["github", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://github.com/about/careers",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-gl-06",
-    company: "Canva",
-    city: "Remote",
-    role: "Frontend Graphics & UI Systems Engineer",
-    mode: "Remote" as const,
-    sal: "$85,000 – $140,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["TypeScript", "React", "WebGL", "Canvas API", "Tailwind CSS"],
-    extra: ["Redux", "Rust", "Jest"],
-    plats: ["linkedin", "remoteok"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.canva.com/careers/",
-    ats: "lever" as const,
-  },
-  {
-    id: "co-gl-07",
-    company: "Perplexity AI",
-    city: "Remote",
-    role: "Conversational Search UI & Platform Engineer",
-    mode: "Remote" as const,
-    sal: "$115,000 – $175,000 / yr",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "Next.js", "Python", "Tailwind CSS"],
-    extra: ["FastAPI", "Vector Search", "Redis"],
-    plats: ["github", "linkedin"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.perplexity.ai/careers",
-    ats: "ashby" as const,
-  },
-  {
-    id: "co-gl-08",
-    company: "Notion",
-    city: "Remote",
-    role: "Collaborative Workspace Frontend Engineer",
-    mode: "Remote" as const,
-    sal: "$105,000 – $165,000 / yr",
-    exp: "Senior" as const,
-    core: ["React", "TypeScript", "Canvas", "PostgreSQL", "Node.js"],
-    extra: ["WebSockets", "Performance", "Tailwind CSS"],
-    plats: ["linkedin", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.notion.so/careers",
-    ats: "lever" as const,
-  },
-  {
-    id: "co-gl-09",
-    company: "Figma",
-    city: "Remote",
-    role: "Design Systems & Web Graphics Developer",
-    mode: "Remote" as const,
-    sal: "$110,000 – $170,000 / yr",
-    exp: "Senior" as const,
-    core: ["TypeScript", "C++", "WebGL", "React", "WebAssembly"],
-    extra: ["Rust", "Canvas", "Figma Plugins"],
-    plats: ["linkedin", "github"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://www.figma.com/careers/",
-    ats: "greenhouse" as const,
-  },
-  {
-    id: "co-gl-10",
-    company: "PostHog",
-    city: "Remote",
-    role: "Full Stack Product Analytics Engineer",
-    mode: "Remote" as const,
-    sal: "$100,000 – $160,000 / yr",
-    exp: "Mid-Level" as const,
-    core: ["React", "TypeScript", "Python", "PostgreSQL", "ClickHouse"],
-    extra: ["Django", "Docker", "Tailwind CSS"],
-    plats: ["github", "linkedin", "remoteok"] as ("meta" | "linkedin" | "indeed" | "upwork" | "remoteok" | "github" | "fiverr")[],
-    url: "https://posthog.com/careers",
-    ats: "ashby" as const,
-  },
-];
 
 let cachedRemoteJobs: ScrapedJob[] = [];
 let lastRemoteFetchTime = 0;
@@ -649,17 +104,8 @@ function extractSkillsFromText(tags?: unknown, fallbackTitle?: string): { core: 
     }
   }
 
-  if (found.length === 0) {
-    return {
-      core: ["React", "TypeScript", "Node.js"],
-      extra: ["Git", "REST APIs", "SQL"],
-    };
-  }
-
-  return {
-    core: found.slice(0, 4),
-    extra: found.slice(4, 7).length > 0 ? found.slice(4, 7) : ["Git", "REST APIs"],
-  };
+  // Only skills actually named in the listing; never pad with guesses.
+  return { core: found.slice(0, 4), extra: found.slice(4, 7) };
 }
 
 // 1. Remotive Free Public Remote Jobs API Scraper
@@ -688,11 +134,11 @@ async function fetchRemotiveJobs(): Promise<ScrapedJob[]> {
         cityKey: "remote",
         jobUrl: item.url || "https://remotive.com",
         workMode: "Remote" as const,
-        salaryRange: item.salary || "$95,000 – $155,000 / yr",
+        salaryRange: item.salary || SALARY_NOT_DISCLOSED,
         experienceLevel: (item.title || "").toLowerCase().includes("senior") ? "Senior" as const : "Mid-Level" as const,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["remotive", "remoteok"] as JobPlatformSource[],
+        platformSources: ["remotive"] as JobPlatformSource[],
         whyRecommended: `Live verified software opening aggregated from Remotive developer board.`,
         talkingPoints: [
           `Detail your experience delivering production web features with ${skills.core.slice(0, 2).join(" & ")}.`,
@@ -738,11 +184,11 @@ async function fetchRemoteOKJobs(): Promise<ScrapedJob[]> {
           salaryRange:
             item.salary_min && item.salary_max
               ? `$${Math.round(item.salary_min / 1000)}k – $${Math.round(item.salary_max / 1000)}k / yr`
-              : "$90,000 – $150,000 / yr",
+              : SALARY_NOT_DISCLOSED,
           experienceLevel: (item.position || "").toLowerCase().includes("senior") ? "Senior" as const : "Mid-Level" as const,
           coreSkills: skills.core,
           extraSkills: skills.extra,
-          platformSources: ["remoteok", "github"] as JobPlatformSource[],
+          platformSources: ["remoteok"] as JobPlatformSource[],
           whyRecommended: `Live real-time tech posting aggregated from RemoteOK.`,
           talkingPoints: [
             `Discuss clean architecture and high-performance delivery across ${skills.core.join(", ")}.`,
@@ -783,11 +229,11 @@ async function fetchArbeitnowJobs(): Promise<ScrapedJob[]> {
         cityKey: isRemote ? "remote" : "global",
         jobUrl: item.url || "https://www.arbeitnow.com",
         workMode: isRemote ? "Remote" as const : "Hybrid" as const,
-        salaryRange: "$85,000 – $145,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel: (item.title || "").toLowerCase().includes("senior") ? "Senior" as const : "Mid-Level" as const,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["arbeitnow", "linkedin"] as JobPlatformSource[],
+        platformSources: ["arbeitnow"] as JobPlatformSource[],
         whyRecommended: `Live Europe-focused & global remote tech opportunity from Arbeitnow job board.`,
         talkingPoints: [
           `Demonstrate strong component lifecycle and API communication using ${skills.core.slice(0, 2).join(" & ")}.`,
@@ -827,11 +273,11 @@ async function fetchJobicyJobs(): Promise<ScrapedJob[]> {
         workMode: "Remote" as const,
         salaryRange: item.annualSalaryMin && item.annualSalaryMax
           ? `$${Math.round(item.annualSalaryMin / 1000)}k – $${Math.round(item.annualSalaryMax / 1000)}k / yr`
-          : "$90,000 – $160,000 / yr",
+          : SALARY_NOT_DISCLOSED,
         experienceLevel: (item.jobLevel || "").toLowerCase().includes("senior") ? "Senior" as const : "Mid-Level" as const,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["jobicy", "remoteok"] as JobPlatformSource[],
+        platformSources: ["jobicy"] as JobPlatformSource[],
         whyRecommended: `Live remote engineering opening from Jobicy global talent network.`,
         talkingPoints: [
           `Highlight experience building robust, scale-ready systems in ${skills.core.slice(0, 2).join(", ")}.`,
@@ -885,11 +331,11 @@ async function fetchTheMuseJobs(): Promise<ScrapedJob[]> {
         cityKey: isRemote ? "remote" : "global",
         jobUrl: landingPage,
         workMode: isRemote ? "Remote" as const : "Hybrid" as const,
-        salaryRange: "$100,000 – $170,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["themuse", "linkedin"] as JobPlatformSource[],
+        platformSources: ["themuse"] as JobPlatformSource[],
         whyRecommended: `Live verified opening from The Muse 500k+ enterprise career network.`,
         talkingPoints: [
           `Demonstrate strong engineering fundamentals, clean modular design, and ${skills.core.slice(0, 2).join(" & ")}.`,
@@ -936,18 +382,18 @@ async function fetchWWRJobs(): Promise<ScrapedJob[]> {
 
       const skills = extractSkillsFromText(undefined, title);
       results.push({
-        id: `wwr-${Math.random().toString(36).slice(2, 8)}`,
+        id: `wwr-${jobUrl.replace(/[^a-z0-9]/gi, "").slice(-24)}`,
         title,
         company,
         location: "Remote (Global / Worldwide)",
         cityKey: "remote",
         jobUrl,
         workMode: "Remote" as const,
-        salaryRange: "$95,000 – $165,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel: title.toLowerCase().includes("senior") || title.toLowerCase().includes("lead") ? "Senior" as const : "Mid-Level" as const,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["remoteok", "github", "linkedin"] as JobPlatformSource[],
+        platformSources: ["weworkremotely"] as JobPlatformSource[],
         whyRecommended: `Live verified remote software role from WeWorkRemotely engineering board.`,
         talkingPoints: [
           `Emphasize autonomous delivery, clean code practices, and modern full-stack workflows.`,
@@ -1008,22 +454,90 @@ async function fetchLiveRemoteAPIs(): Promise<ScrapedJob[]> {
   return cachedRemoteJobs;
 }
 
+
+const OPEN_REMOTE_REGIONS = /(worldwide|global|anywhere|asia|apac|pakistan|emea|south asia|middle east)/i;
+
+/** Remote roles limited to e.g. "USA only" are not reachable from Pakistan, so they must not rank as matches. */
+export function isRemoteOpenToPakistan(location: string) {
+  const region = location.match(/remote\s*\(([^)]*)\)/i)?.[1];
+  if (!region) return true;
+  return OPEN_REMOTE_REGIONS.test(region);
+}
+
+/** Search deep-links for the candidate's role and place on boards that have no public API. */
+export function buildJobBoardSearchLinks(role: string, city: string, placeLabel: string, countryCode: string | null) {
+  const q = encodeURIComponent(role);
+  const inPakistan = !countryCode || countryCode === "PK";
+  const links = [
+    { platform: "linkedin", label: `LinkedIn jobs in ${city}`, url: `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${encodeURIComponent(placeLabel)}` },
+    { platform: "indeed", label: `Indeed jobs in ${city}`, url: `https://${inPakistan ? "pk." : "www."}indeed.com/jobs?q=${q}&l=${encodeURIComponent(city)}` },
+    { platform: "googlejobs", label: `Google Jobs in ${city}`, url: `https://www.google.com/search?ibp=htl;jobs&q=${encodeURIComponent(`${role} jobs in ${placeLabel}`)}` },
+  ];
+  if (inPakistan) {
+    links.splice(2, 0, { platform: "rozee", label: `Rozee.pk jobs in ${city}`, url: `https://www.rozee.pk/job/jsearch/q/${encodeURIComponent(`${role} ${city}`)}` });
+  }
+  return links;
+}
+
+function proximityReason(tier: ProximityTier, job: ScrapedJob, candidateLabel: string, distance: number | null) {
+  const km = distance !== null ? ` · ~${distance} km away` : "";
+  switch (tier) {
+    case "same-city":
+      return `📍 In your city (${candidateLabel})${distance ? km : ""}`;
+    case "nearby":
+      return `📍 Near you${km}`;
+    case "same-province":
+      return `🗺️ Same province${km}`;
+    case "remote":
+      return "🌐 Remote · open to candidates in Pakistan";
+    case "same-country":
+      return `📌 Elsewhere in the country${km}`;
+    default:
+      return job.workMode === "Remote" ? `🌐 Remote, but limited to ${job.location.match(/\(([^)]*)\)/)?.[1] ?? "other regions"}` : "✈️ Abroad";
+  }
+}
+
+const TIER_SCORE_BONUS: Record<ProximityTier, number> = {
+  "same-city": 0.1,
+  nearby: 0.08,
+  "same-province": 0.05,
+  remote: 0.04,
+  "same-country": 0.01,
+  elsewhere: 0,
+};
+
+export type LiveJobsResult = {
+  jobs: EvaluatedCareerOpsJob[];
+  localSearch: LocalJobSearchStatus;
+  /** Services whose jobs are in the list (empty when none returned local jobs). */
+  localProviders: LocalJobProvider[];
+};
+
 /**
- * Scrapes and synthesizes live jobs from multiple boards (Meta, LinkedIn, Indeed, Upwork, RemoteOK, Remotive, Arbeitnow, Jobicy, Local Portals)
- * and ranks them strictly preferring candidate's verified location and skill match.
+ * Fetches real local jobs for the candidate's city (JSearch) plus remote jobs, then ranks
+ * them by distance tier from the candidate's actual location before skill match.
  */
 export async function scrapeAndEvaluateLiveJobs(params: {
   candidateLocation?: string;
+  candidateCoords?: { lat: number; lng: number } | null;
+  countryCode?: string | null;
   candidateSkills?: string;
   targetRole?: string;
   currentJob?: string;
   workMode?: "all" | "Remote" | "Hybrid" | "On-site";
   platform?: "all" | JobPlatformSource;
   query?: string;
-}): Promise<EvaluatedCareerOpsJob[]> {
-  const userLoc = (params.candidateLocation || "Islamabad, Pakistan").trim();
-  const userLocLower = userLoc.toLowerCase();
-  const rawSkills = params.candidateSkills || "React, TypeScript, Node.js, SQL, Tailwind CSS";
+}): Promise<LiveJobsResult> {
+  // No job-search API connected: show nothing rather than a partial list, so the UI can ask for a key.
+  if (!isLocalJobSearchConfigured()) {
+    return { jobs: [], localSearch: "not-configured", localProviders: [] };
+  }
+
+  const userLoc = (params.candidateLocation || DEFAULT_LOCATION_LABEL).trim();
+  const candidateCity: KnownCity | null = findKnownCity(userLoc);
+  const candidateLabel = candidateCity?.name ?? userLoc.split(",")[0].trim();
+  const countryCode = (params.countryCode || (candidateCity ? "PK" : null) || "PK").toUpperCase();
+  const rawSkills = params.candidateSkills || "";
   const userSkillSet = new Set(
     rawSkills
       .split(/[,;\n]+/)
@@ -1032,185 +546,103 @@ export async function scrapeAndEvaluateLiveJobs(params: {
   );
 
   const targetRoleText = (params.targetRole || params.currentJob || "Software Engineer").trim();
+  const canSearchLocally = Boolean(candidateLabel) && candidateLabel !== "Your location";
 
-  // Combine static base registry with dynamic live items
-  const combinedRegistry: ScrapedJob[] = BASE_COMPANIES_RAW.map((b) => {
-    const isPak = b.city !== "Remote";
-    const cityKey = b.city.toLowerCase().replace(/[^a-z]/g, "");
-    const locStr = isPak ? `${b.city}, Pakistan · ${b.mode}` : `Remote (Global / Worldwide)`;
+  const [localRes, remoteRes] = await Promise.allSettled([
+    canSearchLocally
+      ? fetchLocalJobs({ role: targetRoleText, city: candidateCity?.name ?? candidateLabel, countryCode })
+      : Promise.resolve({ jobs: [] as ScrapedJob[], status: "error" as LocalJobSearchStatus, providers: [] as LocalJobProvider[] }),
+    fetchLiveRemoteAPIs(),
+  ]);
+  const local = localRes.status === "fulfilled" ? localRes.value : { jobs: [], status: "error" as LocalJobSearchStatus, providers: [] as LocalJobProvider[] };
+  const combined: ScrapedJob[] = [...local.jobs, ...(remoteRes.status === "fulfilled" ? remoteRes.value : [])];
 
-    return {
-      id: b.id,
-      title: b.role,
-      company: b.company,
-      location: locStr,
-      cityKey: isPak ? cityKey : "remote",
-      jobUrl: b.url,
-      workMode: b.mode,
-      salaryRange: b.sal,
-      experienceLevel: b.exp,
-      coreSkills: b.core,
-      extraSkills: b.extra,
-      platformSources: b.plats,
-      whyRecommended: isPak
-        ? `Priority local alignment with your target tech stack in ${b.city}, verified via ${b.plats.join(" & ")} signals.`
-        : `100% remote global engineering opportunity with high-impact product scope in ${b.core.slice(0, 3).join(", ")}.`,
-      talkingPoints: [
-        `Discuss your project component architecture, clean state management, and type contracts.`,
-        `Highlight your capability to deliver production-ready features on rapid sprint cycles.`,
-      ],
-      sourceAts: b.ats,
-    };
-  });
-
-  // Merge live remote jobs from live REST APIs
-  try {
-    const apiJobs = await fetchLiveRemoteAPIs();
-    if (apiJobs.length > 0) {
-      combinedRegistry.push(...apiJobs);
-    }
-  } catch {}
-
-  // Dynamically add city-specific local jobs if user is in a town not in base list
-  const userCityClean = userLoc.split(",")[0].trim();
-  const userCityKey = userCityClean.toLowerCase().replace(/[^a-z]/g, "");
-  const existsInBase = combinedRegistry.some((j) => j.cityKey === userCityKey);
-
-  if (!existsInBase && userCityClean.length > 2 && userCityKey !== "remote") {
-    combinedRegistry.unshift(
-      {
-        id: `dyn-${userCityKey}-01`,
-        title: `${targetRoleText} (Local Tech Hub & AI Systems)`,
-        company: `${userCityClean} Tech Solutions`,
-        location: `${userCityClean}, Pakistan · Hybrid`,
-        cityKey: userCityKey,
-        jobUrl: `https://pk.indeed.com/jobs?q=${encodeURIComponent(targetRoleText)}&l=${encodeURIComponent(userCityClean)}`,
-        workMode: "Hybrid",
-        salaryRange: "PKR 240,000 – 420,000 / mo",
-        experienceLevel: "Mid-Level",
-        coreSkills: Array.from(userSkillSet).slice(0, 4).map((s) => s.toUpperCase()),
-        extraSkills: ["REST APIs", "Git", "Docker"],
-        platformSources: ["indeed", "linkedin"],
-        whyRecommended: `Direct regional alignment located right in ${userCityClean}, matched with your core skills.`,
-        talkingPoints: [
-          `Discuss your verified competencies and immediate availability for ${userCityClean} hybrid delivery.`,
-          `Highlight experience building scalable full-stack applications.`,
-        ],
-        sourceAts: "direct-portal",
-      },
-      {
-        id: `dyn-${userCityKey}-02`,
-        title: `Full Stack Applications Specialist (${userCityClean} Region)`,
-        company: "Apex Cloud Services",
-        location: `${userCityClean}, Pakistan · Hybrid`,
-        cityKey: userCityKey,
-        jobUrl: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(targetRoleText)}&location=${encodeURIComponent(userCityClean + ", Pakistan")}`,
-        workMode: "Hybrid",
-        salaryRange: "PKR 260,000 – 450,000 / mo",
-        experienceLevel: "Mid-Level",
-        coreSkills: ["React", "TypeScript", "Node.js", "SQL"],
-        extraSkills: ["Tailwind CSS", "Next.js", "PostgreSQL"],
-        platformSources: ["linkedin", "indeed"],
-        whyRecommended: `Active hiring pipeline near ${userCityClean} offering strong engineering compensation.`,
-        talkingPoints: [
-          `Detail your architectural patterns and error recovery mechanisms.`,
-        ],
-        sourceAts: "direct-portal",
-      }
-    );
-  }
-
-  // Evaluate each job against candidate's profile
-  const evaluatedList: EvaluatedCareerOpsJob[] = combinedRegistry.map((job, index) => {
-    // 1. Skill Overlap Calculation
+  const evaluatedList: EvaluatedCareerOpsJob[] = combined.map((job) => {
     const matchingSkills = job.coreSkills.filter((skill) => {
       const norm = skill.trim().toLowerCase().replace(/[^\w#+]/g, "");
       return userSkillSet.has(norm) || Array.from(userSkillSet).some((userS) => userS.includes(norm) || norm.includes(userS));
     });
+    const matchRatio = job.coreSkills.length > 0 ? matchingSkills.length / job.coreSkills.length : 0.5;
 
-    const matchRatio = job.coreSkills.length > 0 ? matchingSkills.length / job.coreSkills.length : 0.6;
+    const jobInCountry = countryCode === "PK" ? /pakistan/i.test(job.location) : job.cityKey !== "remote" && /^(jsearch|serpapi)-/.test(job.id);
+    // Only text-match Pakistani listings, so "Hyderabad, India" is never mistaken for Hyderabad, Sindh.
+    const jobCity = job.cityKey === "remote" ? null : getCityByKey(job.cityKey) ?? (/pakistan/i.test(job.location) ? findKnownCity(job.location) : null);
+    const remoteReachable = job.workMode === "Remote" && isRemoteOpenToPakistan(job.location);
+    const sameUnknownCity = !candidateCity && !jobCity && job.cityKey !== "remote" && job.cityKey === candidateLabel.toLowerCase().replace(/[^a-z]/g, "");
+    const proximity = sameUnknownCity
+      ? { tier: "same-city" as ProximityTier, distanceKm: null }
+      : classifyProximity({
+          candidateCity,
+          candidateCoords: params.candidateCoords,
+          jobCity,
+          jobCoords: job.jobLat != null && job.jobLng != null ? { lat: job.jobLat, lng: job.jobLng } : null,
+          jobIsRemote: remoteReachable,
+          jobInPakistan: jobInCountry,
+        });
+    const { tier, distanceKm } = proximity;
+    const isLocationMatch = PROXIMITY_TIER_RANK[tier] <= PROXIMITY_TIER_RANK.remote;
 
-    // 2. Proximity Calculation
-    const isExactCity = userLocLower.includes(job.cityKey) && job.cityKey !== "remote";
-    const isCountryMatch = userLocLower.includes("pakistan") && job.location.toLowerCase().includes("pakistan");
-    const isRemoteFriendly = job.workMode === "Remote";
-
-    const isLocationMatch = isExactCity || isCountryMatch || isRemoteFriendly;
-
-    let locationMatchReason = "Regional Hub Match";
-    if (isExactCity) {
-      locationMatchReason = `📍 Matched to your city (${userLoc})`;
-    } else if (isCountryMatch) {
-      locationMatchReason = `📍 Matched to your region (${userLoc})`;
-    } else if (isRemoteFriendly) {
-      locationMatchReason = `🌐 100% Remote · Open to ${userLoc}`;
-    }
-
-    // 3. Composite Score
-    const locationBonus = isExactCity ? 0.08 : isCountryMatch ? 0.05 : isRemoteFriendly ? 0.04 : 0;
-    const basePct = Math.round((matchRatio * 0.55 + 0.35 + locationBonus) * 100);
-    const cappedPct = Math.min(98, Math.max(76, basePct));
+    const basePct = Math.round((matchRatio * 0.55 + 0.35 + TIER_SCORE_BONUS[tier]) * 100);
+    const cappedPct = Math.min(98, Math.max(40, basePct));
     const score = Number(((cappedPct / 100) * 5).toFixed(1));
-
-    const displayTitle = job.company === "Capregsoft" && targetRoleText.length > 3
-      ? `${targetRoleText} (Core Platform & AI Systems)`
-      : job.title;
-
-    const connectorNames = job.platformSources
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-      .join(" & ");
+    const sourceName = job.platformSources.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" & ");
 
     return {
       ...job,
-      title: displayTitle,
+      proximityTier: tier,
+      distanceKm,
       isLocationMatch,
-      locationMatchReason,
-      matchedSkills: matchingSkills.length > 0 ? matchingSkills : [job.coreSkills[0], job.coreSkills[1]].filter(Boolean),
+      locationMatchReason: proximityReason(tier, job, candidateLabel, distanceKm),
+      matchedSkills: matchingSkills,
       matchScore: score,
       matchPercentage: cappedPct,
       dimensions: {
-        technicalFit: Math.min(99, Math.max(75, cappedPct + (index % 2 === 0 ? 2 : -1))),
-        seniorityFit: Math.min(96, Math.max(80, cappedPct - (index % 3))),
-        workModeFit: isExactCity || isRemoteFriendly ? 98 : 90,
-        growthFit: Math.min(97, Math.max(85, cappedPct + 1)),
+        technicalFit: cappedPct,
+        seniorityFit: cappedPct,
+        workModeFit: tier === "same-city" || tier === "nearby" || tier === "remote" ? 98 : tier === "same-province" ? 85 : 60,
+        growthFit: cappedPct,
       },
       reportBlocks: {
-        blockA: `${job.company} is actively hiring for ${displayTitle} in ${job.location}. Compensation band: ${job.salaryRange}. (Source: ${connectorNames} / Live Pipeline).`,
-        blockB: `Direct responsibility for architecting mission-critical features, high reliability, and clean software delivery.`,
-        blockC: `Core required technologies: ${job.coreSkills.join(", ")}. Complementary tooling: ${job.extraSkills.join(", ")}.`,
-        blockD: `Your profile exhibits a ${cappedPct}% alignment with verified skill signals across ${matchingSkills.join(", ") || "core web tooling"}.`,
-        blockE: `Connector signals verified through ${connectorNames} corroborate your hands-on code and project delivery background.`,
+        blockA: `${job.company} is hiring for ${job.title} in ${job.location}. Compensation: ${job.salaryRange}. (Source: ${sourceName}).`,
+        blockB: `Read the full description on ${sourceName} for responsibilities and team details.`,
+        blockC: job.coreSkills.length > 0
+          ? `Technologies named in the posting: ${[...job.coreSkills, ...job.extraSkills].join(", ")}.`
+          : `The posting does not list specific technologies; read the full description on the source site.`,
+        blockD: matchingSkills.length > 0
+          ? `Your profile skills that appear in this posting: ${matchingSkills.join(", ")}.`
+          : `None of your profile skills are named in this posting's summary. Check the full description before applying.`,
+        blockE: `Listing source: ${sourceName}.`,
         blockF: job.talkingPoints.join(" "),
-        blockG: `Verified legitimate corporate hiring pipeline; cross-checked with active public career portal.`,
-        blockH: `Highlight your work with ${matchingSkills.slice(0, 3).join(", ") || "TypeScript and modern web frameworks"} and initiate interview practice simulation.`,
+        blockG: `Live posting from ${sourceName}. Apply only through the official link and never pay a fee to apply.`,
+        blockH: matchingSkills.length > 0
+          ? `Lead with your work in ${matchingSkills.slice(0, 3).join(", ")}, then practise this role in an AI mock interview.`
+          : `Tailor your CV to the posting's requirements, then practise this role in an AI mock interview.`,
       },
     };
   });
 
-  // Filter based on user query and constraints
   const filtered = evaluatedList.filter((job) => {
-    if (params.platform && params.platform !== "all" && !job.platformSources.includes(params.platform)) {
-      return false;
-    }
-    if (params.workMode && params.workMode !== "all" && job.workMode !== params.workMode) {
-      return false;
-    }
+    if (params.platform && params.platform !== "all" && !job.platformSources.includes(params.platform)) return false;
+    if (params.workMode && params.workMode !== "all" && job.workMode !== params.workMode) return false;
     if (params.query && params.query.trim()) {
       const q = params.query.toLowerCase();
       const match =
         job.title.toLowerCase().includes(q) ||
         job.company.toLowerCase().includes(q) ||
         job.location.toLowerCase().includes(q) ||
-        job.matchedSkills.some((s) => s.toLowerCase().includes(q));
+        job.coreSkills.some((s) => s.toLowerCase().includes(q));
       if (!match) return false;
     }
     return true;
   });
 
-  // Priority Sorting: Exact location first, then match score descending
-  return filtered.sort((a, b) => {
-    if (a.isLocationMatch && !b.isLocationMatch) return -1;
-    if (!a.isLocationMatch && b.isLocationMatch) return 1;
+  // Closest tier first, then distance, then skill match.
+  const jobs = filtered.sort((a, b) => {
+    const tierDiff = PROXIMITY_TIER_RANK[a.proximityTier] - PROXIMITY_TIER_RANK[b.proximityTier];
+    if (tierDiff !== 0) return tierDiff;
+    if (a.distanceKm !== null && b.distanceKm !== null && a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
     return b.matchScore - a.matchScore;
   });
+
+  return { jobs, localSearch: local.status, localProviders: local.providers };
 }

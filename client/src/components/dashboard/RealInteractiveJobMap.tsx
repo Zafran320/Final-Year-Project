@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
-import { STORAGE_KEYS } from "@/lib/brand";
+import { useUserLocation } from "@/lib/userLocation";
+import { PAKISTAN_CITIES, distanceKm } from "@shared/pakistanCities";
 
 declare global {
   interface Window {
@@ -32,35 +33,10 @@ export interface CityMarker {
   topTech: string[];
 }
 
-export const KNOWN_GEO_LOCATIONS: Record<string, { lat: number; lng: number; province: string }> = {
-  islamabad: { lat: 33.6844, lng: 73.0479, province: "Federal Capital" },
-  rawalpindi: { lat: 33.5651, lng: 73.0169, province: "Punjab" },
-  wahcantt: { lat: 33.7715, lng: 72.7511, province: "Punjab" },
-  taxila: { lat: 33.7463, lng: 72.8397, province: "Punjab" },
-  lahore: { lat: 31.5204, lng: 74.3587, province: "Punjab" },
-  karachi: { lat: 24.8607, lng: 67.0011, province: "Sindh" },
-  faisalabad: { lat: 31.4504, lng: 73.135, province: "Punjab" },
-  peshawar: { lat: 34.0151, lng: 71.5249, province: "KPK" },
-  multan: { lat: 30.1575, lng: 71.5249, province: "Punjab" },
-  quetta: { lat: 30.1798, lng: 66.975, province: "Balochistan" },
-  gujranwala: { lat: 32.1877, lng: 74.1945, province: "Punjab" },
-  sialkot: { lat: 32.4945, lng: 74.5229, province: "Punjab" },
-  abbottabad: { lat: 34.1688, lng: 73.2215, province: "KPK" },
-  hyderabad: { lat: 25.396, lng: 68.3578, province: "Sindh" },
-  bahawalpur: { lat: 29.3544, lng: 71.6911, province: "Punjab" },
-  sargodha: { lat: 32.0836, lng: 72.6711, province: "Punjab" },
-  sheikhupura: { lat: 31.7131, lng: 73.9783, province: "Punjab" },
-  jhelum: { lat: 32.9425, lng: 73.7257, province: "Punjab" },
-  gujrat: { lat: 32.5742, lng: 74.0754, province: "Punjab" },
-  mardan: { lat: 34.1986, lng: 72.0404, province: "KPK" },
-  sukkur: { lat: 27.7052, lng: 68.8574, province: "Sindh" },
-  kasur: { lat: 31.1179, lng: 74.4461, province: "Punjab" },
-  sahiwal: { lat: 30.6682, lng: 73.1114, province: "Punjab" },
-  okara: { lat: 30.8081, lng: 73.4458, province: "Punjab" },
-  mingora: { lat: 34.7758, lng: 72.3625, province: "KPK" },
-  mirpur: { lat: 33.1437, lng: 73.7518, province: "AJK" },
-  muzaffarabad: { lat: 34.3595, lng: 73.4708, province: "AJK" },
-};
+// Derived from the shared city table so client and server agree on city names and coordinates.
+export const KNOWN_GEO_LOCATIONS: Record<string, { lat: number; lng: number; province: string }> = Object.fromEntries(
+  PAKISTAN_CITIES.map((city) => [city.key, { lat: city.lat, lng: city.lng, province: city.province }])
+);
 
 export const PAKISTAN_MAJOR_CITIES: CityMarker[] = [
   {
@@ -173,191 +149,11 @@ export const PAKISTAN_MAJOR_CITIES: CityMarker[] = [
   },
 ];
 
-function normalizePakistaniCity(rawCity: string): string {
-  const lower = rawCity.toLowerCase().trim();
-  if (lower.includes("wah") || (lower.includes("cantt") && (lower.includes("wah") || lower.includes("taxila")))) {
-    return "Wah Cantt";
-  }
-  if (lower.includes("taxila")) return "Taxila";
-  if (lower.includes("rawalpindi") || lower.includes("chaklala") || lower.includes("pindi")) return "Rawalpindi";
-  if (lower.includes("islamabad")) return "Islamabad";
-  if (lower.includes("lahore")) return "Lahore";
-  if (lower.includes("karachi")) return "Karachi";
-  if (lower.includes("faisalabad") || lower.includes("lyallpur")) return "Faisalabad";
-  if (lower.includes("peshawar")) return "Peshawar";
-  if (lower.includes("multan")) return "Multan";
-  if (lower.includes("gujranwala")) return "Gujranwala";
-  if (lower.includes("sialkot")) return "Sialkot";
-  if (lower.includes("abbottabad")) return "Abbottabad";
-  if (lower.includes("quetta")) return "Quetta";
-  if (lower.includes("hyderabad")) return "Hyderabad";
-  if (lower.includes("bahawalpur")) return "Bahawalpur";
-  if (lower.includes("sargodha")) return "Sargodha";
-  if (lower.includes("gujrat")) return "Gujrat";
-  if (lower.includes("jhelum")) return "Jhelum";
-  if (lower.includes("mardan")) return "Mardan";
-  if (lower.includes("sukkur")) return "Sukkur";
-  if (lower.includes("kasur")) return "Kasur";
-  if (lower.includes("sahiwal")) return "Sahiwal";
-  if (lower.includes("okara")) return "Okara";
-  if (lower.includes("mingora") || lower.includes("swat")) return "Mingora";
-  if (lower.includes("mirpur")) return "Mirpur";
-  if (lower.includes("muzaffarabad")) return "Muzaffarabad";
-  return rawCity;
-}
-
-async function reverseGeocodeCoords(
-  lat: number,
-  lng: number
-): Promise<{ cityName: string; province: string; fullAddress: string }> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
-      {
-        headers: { "Accept-Language": "en" },
-      }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const addr = data.address || {};
-      const foundCity =
-        addr.city ||
-        addr.town ||
-        addr.suburb ||
-        addr.municipality ||
-        addr.district ||
-        addr.county ||
-        addr.state_district ||
-        addr.residential ||
-        addr.neighbourhood ||
-        addr.village;
-      const foundState = addr.state || addr.province || addr.region || "Pakistan";
-      if (foundCity) {
-        const normalized = normalizePakistaniCity(foundCity);
-        return {
-          cityName: normalized,
-          province: foundState,
-          fullAddress: data.display_name || normalized,
-        };
-      }
-    }
-  } catch {}
-
-  try {
-    const res = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const foundCity = data.city || data.locality || data.principalSubdivision;
-      if (foundCity) {
-        const normalized = normalizePakistaniCity(foundCity);
-        return {
-          cityName: normalized,
-          province: data.principalSubdivision || "Pakistan",
-          fullAddress: `${normalized}, ${data.countryName || "Pakistan"}`,
-        };
-      }
-    }
-  } catch {}
-
-  // Fallback to closest known key
-  let closest = PAKISTAN_MAJOR_CITIES[0];
-  let minD = Infinity;
-  for (const [k, geo] of Object.entries(KNOWN_GEO_LOCATIONS)) {
-    const d = calculateDistanceKm(lat, lng, geo.lat, geo.lng);
-    if (d < minD) {
-      minD = d;
-      closest = {
-        id: k,
-        name: k.charAt(0).toUpperCase() + k.slice(1),
-        lat: geo.lat,
-        lng: geo.lng,
-        jobCount: 25,
-        province: geo.province,
-        topTech: ["React", "TypeScript", "Node.js"],
-      };
-    }
-  }
-  return { cityName: closest.name, province: closest.province, fullAddress: closest.name };
-}
-
-async function detectViaIP(): Promise<{
-  lat: number;
-  lng: number;
-  cityName: string;
-  province: string;
-} | null> {
-  try {
-    const res = await fetch("https://ipwho.is/");
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.latitude && data.longitude && data.city) {
-        const normalized = normalizePakistaniCity(data.city);
-        return {
-          lat: data.latitude,
-          lng: data.longitude,
-          cityName: normalized,
-          province: data.region || "Pakistan",
-        };
-      }
-    }
-  } catch {}
-  try {
-    const res = await fetch("https://ipapi.co/json/");
-    if (res.ok) {
-      const data = await res.json();
-      if (data.latitude && data.longitude && data.city) {
-        const normalized = normalizePakistaniCity(data.city);
-        return {
-          lat: data.latitude,
-          lng: data.longitude,
-          cityName: normalized,
-          province: data.region || "Pakistan",
-        };
-      }
-    }
-  } catch {}
-  try {
-    const res = await fetch("https://freeipapi.com/api/json");
-    if (res.ok) {
-      const data = await res.json();
-      if (data.latitude && data.longitude && data.cityName) {
-        const normalized = normalizePakistaniCity(data.cityName);
-        return {
-          lat: data.latitude,
-          lng: data.longitude,
-          cityName: normalized,
-          province: data.regionName || "Pakistan",
-        };
-      }
-    }
-  } catch {}
-  return null;
-}
-
 const PAKISTAN_CENTER: [number, number] = [30.3753, 69.3451];
 const DEFAULT_ZOOM = 5;
 
-// Haversine formula to compute exact distance in km between two GPS coordinates
-export function calculateDistanceKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371; // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
-}
+// Kept as a named export for existing callers; the implementation lives in the shared city module.
+export const calculateDistanceKm = distanceKm;
 
 // Dynamically load real Leaflet map script & styles with CDN fallback
 function loadLeafletEngine(): Promise<any> {
@@ -443,14 +239,12 @@ export function RealInteractiveJobMap({
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(
     propUserCoords || null
   );
-  const hasAttemptedAutoGeo = useRef(false);
   const lastFlownCityRef = useRef<string>("");
   const userHasMovedMapRef = useRef<boolean>(false);
   const onSelectCityRef = useRef(onSelectCity);
   onSelectCityRef.current = onSelectCity;
   const onUserCoordsDetectedRef = useRef(onUserCoordsDetected);
   onUserCoordsDetectedRef.current = onUserCoordsDetected;
-  const hasLoadedInitialGeo = useRef(false);
 
   const [customDetectedCity, setCustomDetectedCity] = useState<CityMarker | null>(null);
 
@@ -472,7 +266,7 @@ export function RealInteractiveJobMap({
 
     const base = PAKISTAN_MAJOR_CITIES.map((c) => ({
       ...c,
-      jobCount: counts[c.id] !== undefined ? Math.max(counts[c.id], 5) : c.jobCount,
+      jobCount: counts[c.id] ?? 0,
     }));
 
     if (customDetectedCity && !base.some((c) => c.name.toLowerCase() === customDetectedCity.name.toLowerCase())) {
@@ -512,7 +306,7 @@ export function RealInteractiveJobMap({
         }
       }
     });
-    return count > 0 ? count : 18;
+    return count;
   }, [userCoords, liveJobs, proximityRadiusKm]);
 
   // Initialize Real Google Maps / OpenStreetMap Layer (Once on Mount)
@@ -635,200 +429,104 @@ export function RealInteractiveJobMap({
     }
   }, [selectedCity, isMapLoaded]);
 
-  // Geolocation trigger with High Accuracy Reverse Geocoding and IP Fallback
+  // Location comes from the shared hook (GPS → server geocoder → saved 24 h → profile city).
+  const { location: resolvedLocation, status: locationStatus, detect } = useUserLocation(savedProfileLocation);
+
+  useEffect(() => {
+    setIsDetectingLocation(locationStatus === "detecting");
+    if (locationStatus === "denied" || locationStatus === "error") setGeoStatus(savedProfileLocation ? "fallback" : "denied");
+  }, [locationStatus, savedProfileLocation]);
+
+  // Draw the user marker and tell the parent whenever the resolved location changes.
+  const lastAppliedLocationRef = useRef<string>("");
+  useEffect(() => {
+    const { lat, lng, city } = resolvedLocation;
+    const signature = `${city}|${lat}|${lng}|${resolvedLocation.source}`;
+    if (signature === lastAppliedLocationRef.current) return;
+
+    if (lat === null || lng === null) {
+      lastAppliedLocationRef.current = signature;
+      onSelectCityRef.current?.(city);
+      return;
+    }
+    // Only treat GPS/manual choices as "the user's position"; a profile/default city is just a starting view.
+    const isUserPosition = resolvedLocation.source === "gps" || resolvedLocation.source === "manual";
+    const coords = { lat, lng };
+    if (isUserPosition) {
+      setUserCoords(coords);
+      setGeoStatus("detected");
+      if (resolvedLocation.cityKey === null) {
+        setCustomDetectedCity({ id: city, name: city, lat, lng, jobCount: 0, province: "", topTech: [] });
+      }
+      onUserCoordsDetectedRef.current?.(coords, city);
+    }
+    onSelectCityRef.current?.(city, coords);
+
+    if (!mapInstanceRef.current || !window.L || !isMapLoaded) return;
+    lastAppliedLocationRef.current = signature;
+    const map = mapInstanceRef.current;
+    const L = window.L;
+
+    if (isUserPosition) {
+      if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
+      if (radiusCircleRef.current) map.removeLayer(radiusCircleRef.current);
+
+      radiusCircleRef.current = L.circle([lat, lng], {
+        radius: proximityRadiusKm * 1000,
+        color: "#ff5722",
+        fillColor: "#ff5722",
+        fillOpacity: 0.1,
+        weight: 1.5,
+        dashArray: "4, 6",
+      }).addTo(map);
+
+      const userHtml = `
+        <div class="relative flex items-center justify-center">
+          <div class="absolute -inset-4 rounded-full bg-emerald-500/30 animate-ping"></div>
+          <div class="size-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 border-2 border-white shadow-xl flex items-center justify-center text-white">
+            <span class="size-2 rounded-full bg-white animate-pulse"></span>
+          </div>
+        </div>
+      `;
+      const popup = document.createElement("div");
+      popup.className = "text-xs p-1.5 font-sans";
+      const title = document.createElement("div");
+      title.className = "text-emerald-600 font-bold text-sm";
+      title.textContent = `${resolvedLocation.source === "gps" ? "📍 Your location" : "📍 Your chosen city"}: ${city}`;
+      popup.appendChild(title);
+      if (resolvedLocation.formattedAddress) {
+        const address = document.createElement("div");
+        address.className = "text-slate-500 text-[11px] mt-0.5";
+        address.textContent = resolvedLocation.formattedAddress;
+        popup.appendChild(address);
+      }
+
+      userMarkerRef.current = L.marker([lat, lng], {
+        icon: L.divIcon({ className: "user-gps-marker", html: userHtml, iconSize: [26, 26], iconAnchor: [13, 13] }),
+      })
+        .addTo(map)
+        .bindPopup(popup);
+    }
+
+    lastFlownCityRef.current = city;
+    userHasMovedMapRef.current = false;
+    map.flyTo([lat, lng], isUserPosition ? 11 : 10, { duration: 1.2 });
+  }, [resolvedLocation, isMapLoaded, proximityRadiusKm]);
+
   const detectUserLocation = useCallback(
     async (isManual = false) => {
-      setIsDetectingLocation(true);
-
-      const onGeoSuccess = async (position: GeolocationPosition) => {
-        const { latitude, longitude } = position.coords;
-        const geoInfo = await reverseGeocodeCoords(latitude, longitude);
-        const coords = { lat: latitude, lng: longitude };
-
-        setUserCoords(coords);
-        setGeoStatus("detected");
-        setIsDetectingLocation(false);
-
-        try {
-          localStorage.setItem(
-            STORAGE_KEYS.userGeo,
-            JSON.stringify({
-              lat: latitude,
-              lng: longitude,
-              cityName: geoInfo.cityName,
-              fullAddress: geoInfo.fullAddress,
-            })
-          );
-          localStorage.setItem(STORAGE_KEYS.userLocation, geoInfo.cityName);
-        } catch {}
-
-        const dynamicDetectedCity: CityMarker = {
-          id: geoInfo.cityName,
-          name: geoInfo.cityName,
-          lat: latitude,
-          lng: longitude,
-          jobCount: 30,
-          province: geoInfo.province,
-          topTech: ["React", "TypeScript", "Node.js", "Python"],
-        };
-        setCustomDetectedCity(dynamicDetectedCity);
-
-        onSelectCityRef.current?.(geoInfo.cityName, coords);
-        onUserCoordsDetectedRef.current?.(coords, geoInfo.cityName);
-
-        if (mapInstanceRef.current && window.L) {
-          const L = window.L;
-          if (userMarkerRef.current) {
-            mapInstanceRef.current.removeLayer(userMarkerRef.current);
-          }
-          if (radiusCircleRef.current) {
-            mapInstanceRef.current.removeLayer(radiusCircleRef.current);
-          }
-
-          radiusCircleRef.current = L.circle([latitude, longitude], {
-            radius: proximityRadiusKm * 1000,
-            color: "#ff5722",
-            fillColor: "#ff5722",
-            fillOpacity: 0.1,
-            weight: 1.5,
-            dashArray: "4, 6",
-          }).addTo(mapInstanceRef.current);
-
-          const userHtml = `
-            <div class="relative flex items-center justify-center">
-              <div class="absolute -inset-4 rounded-full bg-emerald-500/30 animate-ping"></div>
-              <div class="size-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 border-2 border-white shadow-xl flex items-center justify-center text-white">
-                <span class="size-2 rounded-full bg-white animate-pulse"></span>
-              </div>
-            </div>
-          `;
-
-          userMarkerRef.current = L.marker([latitude, longitude], {
-            icon: L.divIcon({
-              className: "user-gps-marker",
-              html: userHtml,
-              iconSize: [26, 26],
-              iconAnchor: [13, 13],
-            }),
-          })
-            .addTo(mapInstanceRef.current)
-            .bindPopup(
-              `<div class="text-xs p-1.5 font-sans">
-                <div class="flex items-center gap-1 text-emerald-600 font-bold text-sm">
-                  <span>🎯 Your Exact Location:</span> <span>${geoInfo.cityName}</span>
-                </div>
-                <div class="text-slate-500 text-[11px] mt-0.5">${geoInfo.fullAddress}</div>
-                <div class="text-orange-600 font-bold text-xs mt-1">💼 Jobs within ${proximityRadiusKm}km</div>
-              </div>`
-            )
-            .openPopup();
-
-          if (isManual || lastFlownCityRef.current === "") {
-            lastFlownCityRef.current = geoInfo.cityName;
-            userHasMovedMapRef.current = false;
-            mapInstanceRef.current.flyTo([latitude, longitude], 11, { duration: 1.2 });
-          }
-        }
-
-        if (isManual) {
-          toast.success(
-            `📍 Exact location detected: ${geoInfo.cityName} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
-          );
-        }
-      };
-
-      const onGeoError = async (err: any) => {
-        const ipLoc = await detectViaIP();
-        if (ipLoc) {
-          const coords = { lat: ipLoc.lat, lng: ipLoc.lng };
-          setUserCoords(coords);
-          setGeoStatus("detected");
-          setIsDetectingLocation(false);
-
-          try {
-            localStorage.setItem(
-              STORAGE_KEYS.userGeo,
-              JSON.stringify({
-                lat: ipLoc.lat,
-                lng: ipLoc.lng,
-                cityName: ipLoc.cityName,
-              })
-            );
-            localStorage.setItem(STORAGE_KEYS.userLocation, ipLoc.cityName);
-          } catch {}
-
-          const dynamicDetectedCity: CityMarker = {
-            id: ipLoc.cityName,
-            name: ipLoc.cityName,
-            lat: ipLoc.lat,
-            lng: ipLoc.lng,
-            jobCount: 24,
-            province: ipLoc.province,
-            topTech: ["React", "TypeScript", "Node.js"],
-          };
-          setCustomDetectedCity(dynamicDetectedCity);
-
-          onSelectCityRef.current?.(ipLoc.cityName, coords);
-          onUserCoordsDetectedRef.current?.(coords, ipLoc.cityName);
-
-          if (mapInstanceRef.current && (isManual || lastFlownCityRef.current === "")) {
-            lastFlownCityRef.current = ipLoc.cityName;
-            userHasMovedMapRef.current = false;
-            mapInstanceRef.current.flyTo([ipLoc.lat, ipLoc.lng], 10, { duration: 1.2 });
-          }
-          if (isManual) toast.success(`📍 Location detected: ${ipLoc.cityName}`);
-        } else {
-          setIsDetectingLocation(false);
-          setGeoStatus("denied");
-          if (savedProfileLocation) {
-            onSelectCityRef.current?.(savedProfileLocation);
-            setGeoStatus("fallback");
-            if (isManual) toast.info(`Using profile location: ${savedProfileLocation}`);
-          } else if (isManual) {
-            toast.error("Location access denied. Please select your city manually.");
-          }
-        }
-      };
-
-      if (typeof window !== "undefined" && "geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        });
+      const result = await detect();
+      if (!isManual) return;
+      if (result) {
+        toast.success(`📍 Location detected: ${result.label}`);
+      } else if (savedProfileLocation) {
+        toast.info(`Couldn't access your location. Using your profile city: ${savedProfileLocation}`);
       } else {
-        onGeoError(new Error("No geolocation"));
+        toast.error("Location access denied. Please select your city manually.");
       }
     },
-    [proximityRadiusKm, savedProfileLocation]
+    [detect, savedProfileLocation]
   );
-
-  // Load saved location on mount or auto detect (Runs strictly once on mount)
-  useEffect(() => {
-    if (hasLoadedInitialGeo.current) return;
-    hasLoadedInitialGeo.current = true;
-
-    try {
-      const savedGeo = localStorage.getItem(STORAGE_KEYS.userGeo);
-      if (savedGeo) {
-        const parsed = JSON.parse(savedGeo);
-        if (parsed.lat && parsed.lng && parsed.cityName) {
-          const coords = { lat: parsed.lat, lng: parsed.lng };
-          setUserCoords(coords);
-          setGeoStatus("detected");
-          lastFlownCityRef.current = parsed.cityName;
-          onSelectCityRef.current?.(parsed.cityName, coords);
-          onUserCoordsDetectedRef.current?.(coords, parsed.cityName);
-          return;
-        }
-      }
-    } catch {}
-
-    if (!hasAttemptedAutoGeo.current) {
-      hasAttemptedAutoGeo.current = true;
-      detectUserLocation(false);
-    }
-  }, [detectUserLocation]);
 
   const activeCityData =
     dynamicCityList.find((c) => c.name.toLowerCase() === selectedCity.toLowerCase()) ||

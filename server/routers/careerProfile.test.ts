@@ -211,4 +211,9 @@ describe("career profile contract", () => {
       profilePhotoMimeType: null,
     });
   });
+
+  it("refuses live job search for signed-out callers, so strangers can't drain the job-search quota", async () => {
+    const anonymous = careerProfileRouter.createCaller({ user: null } as never);
+    await expect(anonymous.fetchLiveJobs({ location: "Islamabad, Pakistan" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });

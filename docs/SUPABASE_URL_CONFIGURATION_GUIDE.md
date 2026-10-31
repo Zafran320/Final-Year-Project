@@ -1,4 +1,4 @@
-# Supabase Configuration Guide for CareerTwin AI (Vercel & Production)
+# Supabase Configuration Guide for FutureMaker AI (Vercel & Production)
 
 Follow these simple steps in your **Supabase Dashboard** to make sure confirmation emails and authentication work flawlessly in production on Vercel without rate limits or localhost redirects.
 

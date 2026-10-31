@@ -1,6 +1,6 @@
 # Layer: Data Access
 
-This folder is the **data access layer** for the CareerTwin AI server.
+This folder is the **data access layer** for the FutureMaker AI server.
 
 It is responsible for:
 - All database read/write operations (PostgreSQL via Drizzle ORM + Supabase REST fallback)
