@@ -4755,6 +4755,16 @@ async function scrapeAndEvaluateLiveJobs(params) {
   ]);
   const local = localRes.status === "fulfilled" ? localRes.value : { jobs: [], status: "error", providers: [] };
   const combined = [...local.jobs, ...remoteRes.status === "fulfilled" ? remoteRes.value : []];
+  const coordKey = (job) => job.jobLat != null && job.jobLng != null ? `${job.jobLat},${job.jobLng}` : null;
+  const coordUses = /* @__PURE__ */ new Map();
+  for (const job of combined) {
+    const key = coordKey(job);
+    if (key) coordUses.set(key, (coordUses.get(key) ?? 0) + 1);
+  }
+  const hasOfficeCoords = (job) => {
+    const key = coordKey(job);
+    return key !== null && coordUses.get(key) === 1;
+  };
   const evaluatedList = combined.map((job) => {
     const matchingSkills = job.coreSkills.filter((skill) => {
       const norm = skill.trim().toLowerCase().replace(/[^\w#+]/g, "");
@@ -4769,11 +4779,12 @@ async function scrapeAndEvaluateLiveJobs(params) {
       candidateCity,
       candidateCoords: params.candidateCoords,
       jobCity,
-      jobCoords: job.jobLat != null && job.jobLng != null ? { lat: job.jobLat, lng: job.jobLng } : null,
+      jobCoords: hasOfficeCoords(job) ? { lat: job.jobLat, lng: job.jobLng } : null,
       jobIsRemote: remoteReachable,
       jobInPakistan: jobInCountry
     });
-    const { tier, distanceKm: distanceKm2 } = proximity;
+    const distanceKm2 = proximity.tier === "same-city" && !hasOfficeCoords(job) ? null : proximity.distanceKm;
+    const { tier } = proximity;
     const isLocationMatch = PROXIMITY_TIER_RANK[tier] <= PROXIMITY_TIER_RANK.remote;
     const basePct = Math.round((matchRatio * 0.55 + 0.35 + TIER_SCORE_BONUS[tier]) * 100);
     const cappedPct = Math.min(98, Math.max(40, basePct));

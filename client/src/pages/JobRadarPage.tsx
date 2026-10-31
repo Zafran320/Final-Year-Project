@@ -39,7 +39,7 @@ import { STORAGE_KEYS } from "@/lib/brand";
 import { JobSearchStatusNotice, jobSearchStatusMessage } from "@/components/JobSearchStatusNotice";
 import { useJobApplications } from "@/lib/jobApplications";
 import { useUserLocation } from "@/lib/userLocation";
-import { PAKISTAN_CITIES } from "@shared/pakistanCities";
+import { PAKISTAN_CITIES, PROXIMITY_TIER_RANK } from "@shared/pakistanCities";
 import type { JobPlatformSource } from "../../../server/services/careerOpsScraper";
 
 type ConnectionPlatform = JobPlatformSource;
@@ -216,9 +216,10 @@ export default function JobRadarPage() {
         return a.company.localeCompare(b.company);
       }
       if (activeSortBy === "proximity") {
-        const da = a.distanceKm ?? (a.workMode === "Remote" ? 5_000 : 10_000);
-        const db = b.distanceKm ?? (b.workMode === "Remote" ? 5_000 : 10_000);
-        if (da !== db) return da - db;
+        // Closest tier first (your city, nearby, province…); a job in your city may have no exact distance.
+        const tierDiff = (PROXIMITY_TIER_RANK[a.proximityTier] ?? 9) - (PROXIMITY_TIER_RANK[b.proximityTier] ?? 9);
+        if (tierDiff !== 0) return tierDiff;
+        if (a.distanceKm != null && b.distanceKm != null && a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
         return b.matchScore - a.matchScore;
       }
       return b.matchScore - a.matchScore;
@@ -848,8 +849,8 @@ export default function JobRadarPage() {
 
               <div className="grid grid-cols-3 gap-2 w-full pt-3 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]">
                 <div className="flex flex-col items-center text-center gap-0.5">
-                  <strong className="text-[var(--text)] font-semibold">100+ Live Roles</strong>
-                  <span>5 Top Platforms</span>
+                  <strong className="text-[var(--text)] font-semibold">Live Local Jobs</strong>
+                  <span>LinkedIn · Indeed · Rozee.pk</span>
                 </div>
                 <div className="flex flex-col items-center text-center gap-0.5">
                   <strong className="text-[var(--text)] font-semibold">AI Match Score</strong>

@@ -39,7 +39,7 @@ New name: **FutureMaker AI** (short name `FutureMaker`, slug `futuremaker-ai`). 
 | 2.5 | `package.json` name, `.env.example` `VITE_APP_ID` | ✅ |
 | 2.6 | **Manual (you):** set `VITE_APP_ID="futuremaker-ai"` in your own `.env`; rename the Vercel project/domain and GitHub repo if wanted, then update the `careertwin-ai.vercel.app` URLs in `docs/SUPABASE_URL_CONFIGURATION_GUIDE.md` and Supabase Auth redirect settings | ⬜ |
 
-Intentionally unchanged: `manus-storage/careertwin-*.jpg` asset filenames, `reference_unpacked/`, presentation files, old `career-twin-logo.*` files (all Phase 6 cleanup).
+Intentionally unchanged: `manus-storage/careertwin-*.jpg` asset filenames and presentation files. (`reference_unpacked/` and the old `career-twin-logo.*` files were removed in 6.2.)
 
 ## Phase 3 — Location & Job Radar ✅
 
@@ -87,10 +87,10 @@ Needs: palette direction.
 ## Phase 6 — Cleanup ⬜
 
 - 6.1 Delete unused template code (`heartbeat`, `dataApi`, `imageGeneration`, `voiceTranscription`, `_core/map.ts`, `Map.tsx`, `ManusDialog`, `ComponentShowcase`, `WelcomeExperience`, `PakistanInteractiveMap`, `JobRecommendationsRadar`)
-- 6.2 Remove `client/public/__manus__/debug-collector.js`, `.manus-logs`, `files.zip`, `reference_unpacked/`, legacy MySQL migrations
+- 6.2 ✅ Removed `client/public/__manus__/debug-collector.js` (+ its `vercel.json` rewrite), `reference_unpacked/`, `drizzle/legacy_mysql_migrations/`, old `career-twin-logo.*` copies. (`.manus-logs/` and `files.zip` were never in git — already ignored.)
 - 6.3 One package manager (remove the other lockfile)
 - 6.4 Rewrite `README.md` and `SECURITY.md` to match reality
-- 6.5 Replace unverifiable marketing claims with accurate copy
+- 6.5 🟨 Replace unverifiable marketing claims with accurate copy — job-related claims done (landing job counts and "% match" badges, Job Radar teaser, dashboard "interview readiness" text and 80% fallback, map "High Index"/"Hybrid & Local"/tech stacks now computed from live jobs). Remaining: landing "Proven Performance" stats, "$250/hr", latency/FPS claims
 
 ## Phase 7 — Quality & "Master Project" Upgrades ⬜
 

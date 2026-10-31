@@ -26,7 +26,7 @@ import {
   Radar,
 } from "lucide-react";
 import { JobCardData } from "./types";
-import { RealInteractiveJobMap, calculateDistanceKm, KNOWN_GEO_LOCATIONS } from "./RealInteractiveJobMap";
+import { RealInteractiveJobMap } from "./RealInteractiveJobMap";
 import { JobSearchStatusNotice } from "@/components/JobSearchStatusNotice";
 import { useJobApplications } from "@/lib/jobApplications";
 import { useUserLocation } from "@/lib/userLocation";
@@ -53,7 +53,7 @@ export function JobRecommendationsGrid({
   onSelectCity,
   candidateSkills = "React, TypeScript, Node.js, Tailwind CSS",
   targetRole = "Frontend Developer",
-  interviewScore = 82,
+  interviewScore,
   savedProfileLocation,
 }: JobRecommendationsGridProps) {
   const [, setLocation] = useLocation();
@@ -136,17 +136,8 @@ export function JobRecommendationsGrid({
         "generic",
       ];
 
-      // Prefer the server's distance; fall back to a city-centre estimate for older responses.
-      let distanceKm: number | null = typeof job.distanceKm === "number" ? job.distanceKm : null;
-      if (distanceKm === null && userCoords && job.workMode !== "Remote") {
-        const locLower = (job.location || "").toLowerCase();
-        for (const [key, geo] of Object.entries(KNOWN_GEO_LOCATIONS)) {
-          if (locLower.includes(key)) {
-            distanceKm = calculateDistanceKm(userCoords.lat, userCoords.lng, geo.lat, geo.lng);
-            break;
-          }
-        }
-      }
+      // Only the server's distance: it is left out when the posting gives just a city, not an office location.
+      const distanceKm: number | null = typeof job.distanceKm === "number" ? job.distanceKm : null;
 
       return {
         ...job,
@@ -154,7 +145,7 @@ export function JobRecommendationsGrid({
         distanceKm,
       };
     });
-  }, [rawLiveJobs, userCoords]);
+  }, [rawLiveJobs]);
 
   // Count listings per source, only for sources that actually returned jobs.
   const platformCounts = useMemo(() => {
@@ -248,7 +239,7 @@ export function JobRecommendationsGrid({
               Top Job Recommendations in {selectedCity}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Live Career-Ops jobs matched to your interview score ({interviewScore || 80}%), skills, and GPS proximity.
+              Live jobs ranked by distance from you, with the skills from your profile highlighted.
             </p>
           </div>
 
@@ -684,11 +675,11 @@ export function JobRecommendationsGrid({
             </div>
             <div>
               <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium m-0">
-                These recommendations are powered by <strong>Career-Ops Multi-Board Scraper</strong> using{" "}
-                <strong className="text-orange-600 dark:text-orange-400">Gemini Intelligence</strong> to match jobs near your location.
+                Live postings from <strong>Google for Jobs</strong> (LinkedIn, Indeed, Rozee.pk, Glassdoor) and{" "}
+                <strong className="text-orange-600 dark:text-orange-400">public remote job boards</strong>, ranked by distance from your location.
               </p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-                Real-time evaluated against your interview performance score ({interviewScore || 80}%).
+                {interviewScore ? `Your latest AI interview score: ${interviewScore}%.` : "Take an AI mock interview to see how ready you are for these roles."}
               </p>
             </div>
           </div>
@@ -796,8 +787,17 @@ export function JobRecommendationsGrid({
 
                 {/* Interview Readiness Recommendation */}
                 <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-200">
-                  <span className="font-bold block mb-1">Interview Readiness Score ({interviewScore || 80}%):</span>
-                  Your mock interview performance demonstrates strong alignment with {selectedJobForModal.company}'s requirements. Rehearse role-specific architecture questions before submitting your application.
+                  {interviewScore ? (
+                    <>
+                      <span className="font-bold block mb-1">Your latest AI interview score: {interviewScore}%</span>
+                      Practise this role in a mock interview before you apply to {selectedJobForModal.company}.
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold block mb-1">No interview score yet</span>
+                      Take an AI mock interview for this role before you apply to {selectedJobForModal.company}.
+                    </>
+                  )}
                 </div>
               </div>
 

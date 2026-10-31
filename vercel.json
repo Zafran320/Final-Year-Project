@@ -20,10 +20,6 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/__manus__/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
