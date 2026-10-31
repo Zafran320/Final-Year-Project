@@ -27,7 +27,11 @@ import {
 } from "lucide-react";
 import { JobCardData } from "./types";
 import { RealInteractiveJobMap, calculateDistanceKm, KNOWN_GEO_LOCATIONS } from "./RealInteractiveJobMap";
-import { cityJobPresets } from "./mockData";
+import { JobSearchStatusNotice } from "@/components/JobSearchStatusNotice";
+import { useJobApplications } from "@/lib/jobApplications";
+import { useUserLocation } from "@/lib/userLocation";
+import { JOB_PLATFORM_LABELS, type JobPlatformSource } from "@/lib/jobPlatforms";
+import { DEFAULT_CITY_NAME, findKnownCity } from "@shared/pakistanCities";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -53,34 +57,18 @@ export function JobRecommendationsGrid({
   savedProfileLocation,
 }: JobRecommendationsGridProps) {
   const [, setLocation] = useLocation();
-  const [selectedCity, setSelectedCity] = useState(selectedCityProp || "Islamabad");
+  const [selectedCity, setSelectedCity] = useState(selectedCityProp || DEFAULT_CITY_NAME);
+  // The map owns auto-detection; this instance only reads the shared location.
+  const { location: userLocation, isResolving: locationResolving } = useUserLocation(savedProfileLocation);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeFilterTab, setActiveFilterTab] = useState<"near" | "city" | "remote" | "all">("near");
-  const [selectedPlatform, setSelectedPlatform] = useState<
-    | "all"
-    | "meta"
-    | "linkedin"
-    | "indeed"
-    | "upwork"
-    | "remoteok"
-    | "arbeitnow"
-    | "remotive"
-    | "themuse"
-    | "jobicy"
-  >("all");
+  const [selectedPlatform, setSelectedPlatform] = useState<"all" | JobPlatformSource>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleJobsCount, setVisibleJobsCount] = useState(9);
   const [selectedJobForModal, setSelectedJobForModal] = useState<any | null>(null);
 
-  // Sync saved and applied jobs with Job Radar /jobs page
-  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.appliedJobs);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  // Shared with the /jobs page: "opened" vs "applied" is only set when the user confirms.
+  const { statusOf, openJob, toggleApplied } = useJobApplications();
 
   const [savedJobs, setSavedJobs] = useState<Set<string>>(() => {
     try {
@@ -109,21 +97,6 @@ export function JobRecommendationsGrid({
     });
   };
 
-  const toggleApplyJob = (job: any) => {
-    setAppliedJobs((prev) => {
-      const next = new Set(prev);
-      next.add(job.id);
-      try {
-        localStorage.setItem(STORAGE_KEYS.appliedJobs, JSON.stringify(Array.from(next)));
-      } catch {}
-      return next;
-    });
-    toast.success(`Opening careers portal for ${job.company}...`);
-    if (job.jobUrl || job.link) {
-      window.open(job.jobUrl || job.link, "_blank", "noopener,noreferrer");
-    }
-  };
-
   useEffect(() => {
     if (selectedCityProp && selectedCityProp !== selectedCity) {
       setSelectedCity(selectedCityProp);
@@ -131,14 +104,20 @@ export function JobRecommendationsGrid({
   }, [selectedCityProp]);
 
   // Real-time live jobs query from backend Career-Ops scraper & evaluator
+  // Rank from the user's real position when they are browsing their own city; otherwise from the city they picked on the map.
+  const browsingOwnCity = selectedCity.toLowerCase() === userLocation.city.toLowerCase();
+  const selectedKnownCity = findKnownCity(selectedCity);
   const liveJobsQuery = trpc.careerProfile.fetchLiveJobs.useQuery(
     {
-      location: selectedCity,
-      workMode: "all",
-      platform: selectedPlatform,
+      location: browsingOwnCity ? userLocation.label : selectedKnownCity ? `${selectedKnownCity.name}, Pakistan` : selectedCity,
+      lat: browsingOwnCity ? userLocation.lat ?? undefined : selectedKnownCity?.lat,
+      lng: browsingOwnCity ? userLocation.lng ?? undefined : selectedKnownCity?.lng,
+      countryCode: browsingOwnCity ? userLocation.countryCode ?? undefined : selectedKnownCity ? "PK" : undefined,
     },
     {
-      staleTime: 60_000,
+      // Wait for GPS so we don't spend a job-search request on the fallback city first.
+      enabled: !locationResolving,
+      staleTime: 10 * 60_000,
       refetchOnWindowFocus: false,
     }
   );
@@ -149,33 +128,6 @@ export function JobRecommendationsGrid({
 
   // Transform and enrich live jobs with proximity distance
   const allEvaluatedJobs = useMemo(() => {
-    if (rawLiveJobs.length === 0) {
-      // Fallback to presets if query is loading or empty
-      const presets = cityJobPresets[selectedCity] || initialJobs;
-      return presets.map((p, idx) => ({
-        id: p.id || `preset-${idx}`,
-        title: p.title,
-        company: p.company,
-        location: p.location,
-        workMode: p.jobType || "Hybrid",
-        salaryRange: p.salaryRange,
-        experienceLevel: p.experience || "Mid-Level",
-        coreSkills: p.skills,
-        matchedSkills: p.skills,
-        matchPercentage: p.matchPercentage || 85,
-        platformSources: ["linkedin", "indeed"],
-        whyRecommended: `Strong profile alignment in ${selectedCity}.`,
-        talkingPoints: [
-          `Discuss your component architecture and type safety.`,
-          `Highlight production problem solving.`,
-        ],
-        jobUrl: p.link || "https://linkedin.com",
-        sourceAts: "direct-portal",
-        companyLogoVariant: p.companyLogoVariant || "generic",
-        distanceKm: null,
-      }));
-    }
-
     return rawLiveJobs.map((job: any, index: number) => {
       const logoVariants: Array<"abc" | "xyz" | "creative" | "generic"> = [
         "abc",
@@ -184,9 +136,9 @@ export function JobRecommendationsGrid({
         "generic",
       ];
 
-      // Calculate distance to user if coordinates are known
-      let distanceKm: number | null = null;
-      if (userCoords) {
+      // Prefer the server's distance; fall back to a city-centre estimate for older responses.
+      let distanceKm: number | null = typeof job.distanceKm === "number" ? job.distanceKm : null;
+      if (distanceKm === null && userCoords && job.workMode !== "Remote") {
         const locLower = (job.location || "").toLowerCase();
         for (const [key, geo] of Object.entries(KNOWN_GEO_LOCATIONS)) {
           if (locLower.includes(key)) {
@@ -202,42 +154,13 @@ export function JobRecommendationsGrid({
         distanceKm,
       };
     });
-  }, [rawLiveJobs, selectedCity, initialJobs, userCoords]);
+  }, [rawLiveJobs, userCoords]);
 
-  // Platform count breakdown
+  // Count listings per source, only for sources that actually returned jobs.
   const platformCounts = useMemo(() => {
-    const counts = {
-      all: allEvaluatedJobs.length,
-      meta: 0,
-      linkedin: 0,
-      indeed: 0,
-      upwork: 0,
-      remoteok: 0,
-      arbeitnow: 0,
-      remotive: 0,
-      themuse: 0,
-      jobicy: 0,
-    };
-    allEvaluatedJobs.forEach((j) => {
-      const plats = (j.platformSources || []).map((p: string) => p.toLowerCase());
-      const comp = (j.company || "").toLowerCase();
-      if (
-        plats.includes("meta") ||
-        comp.includes("meta") ||
-        comp.includes("facebook") ||
-        comp.includes("whatsapp") ||
-        comp.includes("instagram")
-      ) {
-        counts.meta++;
-      }
-      if (plats.includes("linkedin")) counts.linkedin++;
-      if (plats.includes("indeed")) counts.indeed++;
-      if (plats.includes("upwork") || comp.includes("upwork")) counts.upwork++;
-      if (plats.includes("remoteok")) counts.remoteok++;
-      if (plats.includes("arbeitnow")) counts.arbeitnow++;
-      if (plats.includes("remotive")) counts.remotive++;
-      if (plats.includes("themuse")) counts.themuse++;
-      if (plats.includes("jobicy")) counts.jobicy++;
+    const counts = new Map<JobPlatformSource, number>();
+    allEvaluatedJobs.forEach((j: any) => {
+      (j.platformSources || []).forEach((p: JobPlatformSource) => counts.set(p, (counts.get(p) ?? 0) + 1));
     });
     return counts;
   }, [allEvaluatedJobs]);
@@ -259,49 +182,14 @@ export function JobRecommendationsGrid({
     }
 
     if (selectedPlatform !== "all") {
-      list = list.filter((j) => {
-        const plats = (j.platformSources || []).map((p: string) => p.toLowerCase());
-        const comp = (j.company || "").toLowerCase();
-        if (selectedPlatform === "meta") {
-          return (
-            plats.includes("meta") ||
-            comp.includes("meta") ||
-            comp.includes("facebook") ||
-            comp.includes("whatsapp") ||
-            comp.includes("instagram")
-          );
-        }
-        if (selectedPlatform === "linkedin") return plats.includes("linkedin");
-        if (selectedPlatform === "indeed") return plats.includes("indeed");
-        if (selectedPlatform === "upwork") return plats.includes("upwork") || comp.includes("upwork");
-        if (selectedPlatform === "remoteok") return plats.includes("remoteok");
-        if (selectedPlatform === "arbeitnow") return plats.includes("arbeitnow");
-        if (selectedPlatform === "remotive") return plats.includes("remotive");
-        if (selectedPlatform === "themuse") return plats.includes("themuse");
-        if (selectedPlatform === "jobicy") return plats.includes("jobicy");
-        return true;
-      });
+      list = list.filter((j) => (j.platformSources || []).includes(selectedPlatform));
     }
 
     const cityClean = selectedCity.toLowerCase().replace(/[^a-z]/g, "");
 
     if (activeFilterTab === "near") {
-      const nearbyList = list.filter((j) => {
-        if (j.distanceKm !== null && j.distanceKm <= 65) return true;
-        const loc = (j.location || "").toLowerCase();
-        const key = (j.cityKey || "").toLowerCase();
-        if (loc.includes(cityClean) || key.includes(cityClean)) return true;
-        if (savedProfileLocation && loc.includes(savedProfileLocation.toLowerCase().replace(/[^a-z]/g, ""))) return true;
-        return false;
-      });
-
-      if (nearbyList.length > 0) return nearbyList;
-      return list.filter(
-        (j) =>
-          (j.location || "").toLowerCase().includes(cityClean) ||
-          (j.cityKey || "").toLowerCase().includes(cityClean) ||
-          j.workMode === "Remote"
-      );
+      // Same city or within ~50 km; never silently widen to the whole country.
+      return list.filter((j) => j.proximityTier === "same-city" || j.proximityTier === "nearby");
     }
 
     if (activeFilterTab === "city") {
@@ -310,7 +198,7 @@ export function JobRecommendationsGrid({
           (j.location || "").toLowerCase().includes(cityClean) ||
           (j.cityKey || "").toLowerCase().includes(cityClean)
       );
-      return cityMatches.length > 0 ? cityMatches : list;
+      return cityMatches;
     }
 
     if (activeFilterTab === "remote") {
@@ -433,16 +321,8 @@ export function JobRecommendationsGrid({
               <Layers size={13} /> Live Feeds:
             </span>
             {[
-              { id: "all" as const, label: "All Boards", count: platformCounts.all },
-              { id: "arbeitnow" as const, label: "Arbeitnow", color: "emerald", count: platformCounts.arbeitnow },
-              { id: "remotive" as const, label: "Remotive", color: "blue", count: platformCounts.remotive },
-              { id: "themuse" as const, label: "The Muse", color: "cyan", count: platformCounts.themuse },
-              { id: "jobicy" as const, label: "Jobicy", color: "purple", count: platformCounts.jobicy },
-              { id: "linkedin" as const, label: "LinkedIn", color: "sky", count: platformCounts.linkedin },
-              { id: "indeed" as const, label: "Indeed", color: "indigo", count: platformCounts.indeed },
-              { id: "upwork" as const, label: "Upwork", color: "emerald", count: platformCounts.upwork },
-              { id: "remoteok" as const, label: "RemoteOK", color: "teal", count: platformCounts.remoteok },
-              { id: "meta" as const, label: "Meta Careers", color: "blue", count: platformCounts.meta },
+              { id: "all" as const, label: "All Boards", count: allEvaluatedJobs.length },
+              ...Array.from(platformCounts.entries()).map(([id, count]) => ({ id, label: JOB_PLATFORM_LABELS[id] ?? id, count })),
             ].map((plat) => {
               const isSel = selectedPlatform === plat.id;
               return (
@@ -456,27 +336,7 @@ export function JobRecommendationsGrid({
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {plat.id !== "all" && (
-                    <span
-                      className={`size-2 rounded-full ${
-                        plat.id === "meta"
-                          ? "bg-blue-500"
-                          : plat.id === "linkedin"
-                          ? "bg-sky-500"
-                          : plat.id === "indeed"
-                          ? "bg-indigo-500"
-                          : plat.id === "upwork" || plat.id === "arbeitnow"
-                          ? "bg-emerald-500"
-                          : plat.id === "remotive"
-                          ? "bg-blue-600"
-                          : plat.id === "themuse"
-                          ? "bg-cyan-500"
-                          : plat.id === "jobicy"
-                          ? "bg-purple-500"
-                          : "bg-teal-500"
-                      }`}
-                    />
-                  )}
+                  {plat.id !== "all" && <span className="size-2 rounded-full bg-orange-500" />}
                   <span>{plat.label}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
@@ -514,6 +374,8 @@ export function JobRecommendationsGrid({
           </div>
         </div>
 
+        <JobSearchStatusNotice status={liveJobsQuery.data?.localSearch} />
+
         {/* 3 Job Cards Grid */}
         {liveJobsQuery.isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -537,7 +399,7 @@ export function JobRecommendationsGrid({
               </div>
             ))}
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : liveJobsQuery.data?.localSearch === "not-configured" ? null : filteredJobs.length === 0 ? (
           <div className="rounded-2xl bg-white dark:bg-[#0f1422]/90 border border-slate-200 dark:border-slate-800/80 p-8 text-center space-y-3">
             <div className="size-12 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto">
               <Search size={20} />
@@ -548,6 +410,21 @@ export function JobRecommendationsGrid({
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               Try adjusting your search keywords, switching between live feeds, or choosing another city from the map above.
             </p>
+            {(liveJobsQuery.data?.searchLinks?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {liveJobsQuery.data!.searchLinks.map((link) => (
+                  <a
+                    key={link.platform}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-colors"
+                  >
+                    {link.label} ↗
+                  </a>
+                ))}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -564,7 +441,7 @@ export function JobRecommendationsGrid({
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {filteredJobs.slice(0, visibleJobsCount).map((job: any) => {
-                const isApplied = appliedJobs.has(job.id);
+                const isApplied = statusOf(job.id) === "applied";
                 const isSaved = savedJobs.has(job.id);
                 const plats = (job.platformSources || []).map((p: string) => p.toLowerCase());
                 const comp = (job.company || "").toLowerCase();
@@ -737,27 +614,31 @@ export function JobRecommendationsGrid({
 
                     {/* Card Actions */}
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/60 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => toggleApplyJob(job)}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
-                          isApplied
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                            : "bg-[#ff5722] hover:bg-orange-600 text-white shadow-sm shadow-orange-600/20"
-                        }`}
-                      >
-                        {isApplied ? (
-                          <>
-                            <CheckCircle2 size={13} />
-                            <span>Applied</span>
-                          </>
-                        ) : (
-                          <>
-                            <ExternalLink size={13} />
-                            <span>Apply</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openJob(job)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer bg-[#ff5722] hover:bg-orange-600 text-white shadow-sm shadow-orange-600/20"
+                          title={`Open the official posting for ${job.company}`}
+                        >
+                          <ExternalLink size={13} />
+                          <span>Apply</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleApplied(job)}
+                          aria-pressed={isApplied}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer border ${
+                            isApplied
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                              : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                          }`}
+                          title={isApplied ? "Click to unmark" : "Mark this job as applied"}
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>{isApplied ? "Applied" : "Mark applied"}</span>
+                        </button>
+                      </div>
 
                       <button
                         type="button"
@@ -924,11 +805,11 @@ export function JobRecommendationsGrid({
               <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => toggleApplyJob(selectedJobForModal)}
+                  onClick={() => openJob(selectedJobForModal)}
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   <ExternalLink size={14} />
-                  <span>Apply via Employer Portal</span>
+                  <span>Open official posting</span>
                 </button>
 
                 <div className="flex items-center gap-2">

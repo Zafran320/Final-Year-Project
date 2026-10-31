@@ -1,4 +1,4 @@
-# CareerTwin AI — Local Backend and Authentication Guide
+# FutureMaker AI — Local Backend and Authentication Guide
 
 ## What is currently running
 
@@ -20,7 +20,7 @@ The hosted preview and `localhost` are different browser origins. A signed-in ac
 ## Run the project locally
 
 ```bash
-cd /path/to/careertwin-ai
+cd /path/to/futuremaker-ai
 pnpm install
 pnpm dev
 ```
@@ -37,9 +37,9 @@ The product has two branded entry pages: `/login` and `/signup`.
 | **Create account securely** on `/signup` | Calls `startLogin("signUp")` and opens the same provider with an account-creation intent. |
 | Provider completes | The provider returns to `/api/oauth/callback` with a code and CSRF-bound state. |
 | Server callback completes | The server verifies state, upserts the provider user when the database is configured, and sets a signed HTTP-only application session cookie. |
-| Return to CareerTwin | The user is redirected to `/`; protected screens can then read the real session through `auth.me`. |
+| Return to FutureMaker | The user is redirected to `/`; protected screens can then read the real session through `auth.me`. |
 
-CareerTwin never accepts, stores, or hardcodes a password. The managed provider owns credential collection. The browser session is stored in an HTTP-only cookie rather than application JavaScript storage.
+FutureMaker never accepts, stores, or hardcodes a password. The managed provider owns credential collection. The browser session is stored in an HTTP-only cookie rather than application JavaScript storage.
 
 ## Localhost requirement for real sign-in
 

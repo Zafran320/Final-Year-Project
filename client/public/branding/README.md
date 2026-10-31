@@ -22,5 +22,5 @@ Drop your logo and favicon files here — they are automatically picked up by th
 ## Usage in Components
 
 ```tsx
-<img src="/branding/logo.svg" alt="CareerTwin AI" />
+<img src="/branding/logo.svg" alt="FutureMaker AI" />
 ```

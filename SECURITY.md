@@ -1,8 +1,8 @@
-# Security Boundary — CareerTwin AI
+# Security Boundary — FutureMaker AI
 
 ## Current deployment mode
 
-CareerTwin AI is presently a **static frontend demonstration**. It uses fictional sample data and does not implement production authentication, database persistence, real document uploads, or direct model calls. The interface must not be represented as a secure production data service until the server-side controls below are implemented.
+FutureMaker AI is presently a **static frontend demonstration**. It uses fictional sample data and does not implement production authentication, database persistence, real document uploads, or direct model calls. The interface must not be represented as a secure production data service until the server-side controls below are implemented.
 
 ## Required controls before real-user launch
 

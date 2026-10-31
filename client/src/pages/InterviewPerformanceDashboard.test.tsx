@@ -33,6 +33,11 @@ vi.mock("@/_core/hooks/useAuth", () => ({
 // Mock trpc
 vi.mock("@/lib/trpc", () => ({
   trpc: {
+    location: {
+      reverseGeocode: {
+        useMutation: () => ({ mutateAsync: vi.fn() }),
+      },
+    },
     careerProfile: {
       get: {
         useQuery: () => ({
@@ -55,6 +60,8 @@ vi.mock("@/lib/trpc", () => ({
                 title: "Frontend Developer",
                 company: "ABC Technologies",
                 location: "Islamabad, Pakistan",
+                proximityTier: "same-city",
+                distanceKm: 0,
                 workMode: "Full-time",
                 experienceLevel: "1-3 years",
                 salaryRange: "PKR 120,000 - 180,000 / mo",
@@ -67,6 +74,8 @@ vi.mock("@/lib/trpc", () => ({
                 title: "Software Engineer",
                 company: "XYZ Software House",
                 location: "Islamabad, Pakistan",
+                proximityTier: "same-city",
+                distanceKm: 0,
                 workMode: "Full-time",
                 experienceLevel: "2-4 years",
                 salaryRange: "PKR 140,000 - 200,000 / mo",
@@ -79,6 +88,8 @@ vi.mock("@/lib/trpc", () => ({
                 title: "UI/UX Designer",
                 company: "Creative Solutions",
                 location: "Islamabad, Pakistan",
+                proximityTier: "same-city",
+                distanceKm: 0,
                 workMode: "Full-time",
                 experienceLevel: "1-2 years",
                 salaryRange: "PKR 90,000 - 130,000 / mo",

@@ -1,6 +1,6 @@
 # Layer: Business Logic / Services
 
-This folder is the **service layer** (business logic) for the CareerTwin AI server.
+This folder is the **service layer** (business logic) for the FutureMaker AI server.
 
 It contains all domain logic, AI integrations, and third-party service wrappers.
 

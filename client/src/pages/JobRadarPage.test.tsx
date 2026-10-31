@@ -4,6 +4,10 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import JobRadarPage from "./JobRadarPage";
 
+let mockLocalSearch: "ok" | "not-configured" | "quota-exhausted" = "ok";
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: toastError, message: vi.fn(), info: vi.fn() }) }));
+
 let mockAuth = {
   user: { id: 1, name: "Ahmed Hassan", email: "ahmed@example.com" } as any,
   loading: false,
@@ -60,6 +64,11 @@ const mockJobsList = Array.from({ length: 100 }, (_, i) => ({
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
+    location: {
+      reverseGeocode: {
+        useMutation: () => ({ mutateAsync: vi.fn() }),
+      },
+    },
     careerProfile: {
       get: {
         useQuery: () => ({
@@ -75,15 +84,17 @@ vi.mock("@/lib/trpc", () => ({
         }),
       },
       fetchLiveJobs: {
-        useQuery: () => ({
-          data: {
-            jobs: mockJobsList,
+        useQuery: () => {
+          const data = {
+            jobs: mockLocalSearch === "not-configured" ? [] : mockJobsList,
             lastSyncedAt: new Date().toISOString(),
             userLocation: "Lahore, Pakistan",
-          },
-          isFetching: false,
-          refetch: vi.fn(),
-        }),
+            localSearch: mockLocalSearch,
+            localProviders: mockLocalSearch === "not-configured" ? [] : ["jsearch"],
+            searchLinks: [{ platform: "linkedin", label: "LinkedIn jobs in Lahore", url: "https://www.linkedin.com/jobs/search/" }],
+          };
+          return { data, isFetching: false, refetch: vi.fn(async () => ({ data })) };
+        },
       },
     },
     practicePreparation: {
@@ -96,6 +107,8 @@ vi.mock("@/lib/trpc", () => ({
 
 describe("JobRadarPage", () => {
   beforeEach(() => {
+    mockLocalSearch = "ok";
+    toastError.mockClear();
     mockAuth = {
       user: { id: 1, name: "Ahmed Hassan", email: "ahmed@example.com" },
       loading: false,
@@ -146,9 +159,16 @@ describe("JobRadarPage", () => {
   it("provides direct external job apply links and practice role buttons", () => {
     render(<JobRadarPage />);
 
-    const openJobLinks = screen.getAllByRole("link", { name: /apply on portal|open job/i });
+    const openJobLinks = screen.getAllByRole("link", { name: /apply on posting/i });
     expect(openJobLinks[0].getAttribute("href")).toBe("https://capregsoft.com");
     expect(openJobLinks[0].getAttribute("target")).toBe("_blank");
+
+    // Opening the posting must not mark the job as applied (the reported bug).
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(openJobLinks[0]);
+    expect(openSpy).toHaveBeenCalledWith("https://capregsoft.com", "_blank", "noopener,noreferrer");
+    expect(screen.queryAllByRole("button", { name: /^applied$/i })).toHaveLength(0);
+    openSpy.mockRestore();
 
     const practiceButtons = screen.getAllByRole("button", { name: /practice for/i });
     expect(practiceButtons.length).toBeGreaterThan(0);
@@ -181,5 +201,30 @@ describe("JobRadarPage", () => {
     expect(screen.getByRole("button", { name: /Create Free Account/i })).toBeDefined();
     expect(screen.getByText(/Locked Preview/i)).toBeDefined();
     expect(screen.queryByText(/No matching live roles found/i)).toBeNull();
+  });
+
+  it("shows no jobs and a 'connect API key' message when no job-search key is set", async () => {
+    mockLocalSearch = "not-configured";
+    render(<JobRadarPage />);
+
+    expect(screen.getByRole("alert").textContent).toMatch(/Job search is not connected/i);
+    expect(screen.getByRole("alert").textContent).toMatch(/connect a job search API key/i);
+    expect(screen.queryAllByRole("link", { name: /apply on posting/i })).toHaveLength(0);
+    expect(screen.queryByText(/LinkedIn jobs in Lahore/i)).toBeNull();
+    expect(screen.queryByText(/No matching live roles found/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /sync live radar/i }));
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledWith("Job search is not connected", expect.anything()));
+  });
+
+  it("shows a limit-reached error when the monthly quota is used up", () => {
+    mockLocalSearch = "quota-exhausted";
+    render(<JobRadarPage />);
+    expect(screen.getByRole("alert").textContent).toMatch(/Monthly job search limit reached/i);
+  });
+
+  it("shows no error when job search is working", () => {
+    render(<JobRadarPage />);
+    expect(screen.queryByTestId("job-search-status")).toBeNull();
   });
 });

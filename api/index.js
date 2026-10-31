@@ -3679,6 +3679,7 @@ var authRouter = router({
 
 // server/routers/careerProfile.ts
 import { randomUUID } from "node:crypto";
+import { TRPCError as TRPCError4 } from "@trpc/server";
 import { z as z5 } from "zod";
 
 // server/github.ts
@@ -3867,559 +3868,491 @@ async function storageGetBuffer(relKey) {
   return null;
 }
 
-// server/services/careerOpsScraper.ts
-var BASE_COMPANIES_RAW = [
-  // ─── Meta / Facebook Careers (Global Remote & Regional Tech Hubs) ───
-  {
-    id: "co-meta-01",
-    company: "Meta",
-    city: "Remote",
-    role: "Frontend Engineer (React Core & UI Architecture)",
-    mode: "Remote",
-    sal: "$115,000 \u2013 $185,000 / yr",
-    exp: "Senior",
-    core: ["React", "TypeScript", "JavaScript", "GraphQL", "UI Architecture"],
-    extra: ["Relay", "Next.js", "Jest", "Web Performance"],
-    plats: ["meta", "linkedin"],
-    url: "https://www.metacareers.com/jobs?q=Frontend%20Engineer",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-meta-02",
-    company: "Meta (WhatsApp Platform)",
-    city: "Remote",
-    role: "Full Stack Systems Developer (High Concurrency & Real-Time Web)",
-    mode: "Remote",
-    sal: "$120,000 \u2013 $190,000 / yr",
-    exp: "Senior",
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "WebSockets"],
-    extra: ["Erlang", "Distributed Systems", "Docker", "Security"],
-    plats: ["meta", "linkedin"],
-    url: "https://www.metacareers.com/jobs?q=WhatsApp",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-meta-03",
-    company: "Meta (Instagram Core UI)",
-    city: "Remote",
-    role: "Product Software Engineer (Design Systems & Micro-Interactions)",
-    mode: "Remote",
-    sal: "$110,000 \u2013 $175,000 / yr",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "CSS", "Tailwind CSS", "Figma"],
-    extra: ["Framer Motion", "GraphQL", "Accessibility"],
-    plats: ["meta", "linkedin"],
-    url: "https://www.metacareers.com/jobs?q=Instagram",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-meta-04",
-    company: "Meta AI",
-    city: "Remote",
-    role: "AI Application Engineer (Llama Ecosystem & Developer Experience)",
-    mode: "Remote",
-    sal: "$130,000 \u2013 $210,000 / yr",
-    exp: "Senior",
-    core: ["Python", "TypeScript", "React", "PyTorch", "FastAPI"],
-    extra: ["Vector Search", "LLM Fine-Tuning", "Docker"],
-    plats: ["meta", "linkedin", "github"],
-    url: "https://www.metacareers.com/jobs?q=AI%20Engineer",
-    ats: "direct-portal"
-  },
-  // ─── Upwork High-Paying Contracts & Client Projects ───
-  {
-    id: "co-upwork-01",
-    company: "Upwork Enterprise Clients",
-    city: "Remote",
-    role: "Senior Full-Stack Consultant (React, Node.js & AI Integrations)",
-    mode: "Remote",
-    sal: "$50 \u2013 $95 / hr",
-    exp: "Senior",
-    core: ["React", "TypeScript", "Node.js", "Python", "SQL"],
-    extra: ["FastAPI", "Next.js", "Docker", "LLM APIs"],
-    plats: ["upwork"],
-    url: "https://www.upwork.com/nx/search/jobs/?q=Full%20Stack%20Developer",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-upwork-02",
-    company: "Upwork Top Rated Plus Client",
-    city: "Remote",
-    role: "Frontend React / Next.js Specialist (Dashboard & SaaS UI)",
-    mode: "Remote",
-    sal: "$45 \u2013 $80 / hr",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Next.js", "Tailwind CSS", "REST APIs"],
-    extra: ["Framer Motion", "Redux", "Zustand"],
-    plats: ["upwork"],
-    url: "https://www.upwork.com/nx/search/jobs/?q=React%20Developer",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-upwork-03",
-    company: "Upwork AI Startup Contract",
-    city: "Remote",
-    role: "Full-Stack AI Application Engineer (LangChain & Gemini API)",
-    mode: "Remote",
-    sal: "$55 \u2013 $100 / hr",
-    exp: "Senior",
-    core: ["Python", "TypeScript", "React", "FastAPI", "Node.js"],
-    extra: ["Vector Databases", "Docker", "PostgreSQL"],
-    plats: ["upwork"],
-    url: "https://www.upwork.com/nx/search/jobs/?q=AI%20Engineer",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-upwork-04",
-    company: "Upwork US Fintech Client",
-    city: "Remote",
-    role: "Node.js & TypeScript Backend Specialist (Payment Rails)",
-    mode: "Remote",
-    sal: "$50 \u2013 $85 / hr",
-    exp: "Senior",
-    core: ["Node.js", "TypeScript", "PostgreSQL", "Stripe API", "AWS"],
-    extra: ["Docker", "Redis", "Microservices"],
-    plats: ["upwork"],
-    url: "https://www.upwork.com/nx/search/jobs/?q=Node%20Developer",
-    ats: "direct-portal"
-  },
-  // ─── Pakistan Tech Hubs (Lahore, Islamabad, Rawalpindi, Wah Cantt, Karachi, Peshawar, Faisalabad, Multan, Gujranwala, Sialkot, Abbottabad) ───
-  {
-    id: "co-pk-01",
-    company: "Capregsoft",
-    city: "Lahore",
-    role: "Full Stack Engineer (Core Platform & AI Systems)",
-    mode: "Hybrid",
-    sal: "PKR 260,000 \u2013 430,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "Docker", "PostgreSQL"],
-    plats: ["linkedin", "indeed", "github"],
-    url: "https://capregsoft.com",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-02",
-    company: "Systems Limited",
-    city: "Lahore",
-    role: "Enterprise Solutions Developer (Cloud & Web)",
-    mode: "Hybrid",
-    sal: "PKR 280,000 \u2013 480,000 / mo",
-    exp: "Mid-Level",
-    core: ["Node.js", "TypeScript", "SQL", "React", "Cloud"],
-    extra: ["Azure", "Microservices", "CI/CD"],
-    plats: ["linkedin", "indeed"],
-    url: "https://www.systemsltd.com/careers",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-03",
-    company: "Arbisoft",
-    city: "Lahore",
-    role: "Software Engineer (Web & Distributed Systems)",
-    mode: "Hybrid",
-    sal: "PKR 300,000 \u2013 550,000 / mo",
-    exp: "Mid-Level",
-    core: ["Python", "React", "TypeScript", "SQL", "Django"],
-    extra: ["AWS", "Docker", "FastAPI"],
-    plats: ["linkedin", "indeed"],
-    url: "https://arbisoft.com/careers",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-04",
-    company: "Educative, Inc.",
-    city: "Lahore",
-    role: "Full Stack Engineer (Interactive Learning Platform)",
-    mode: "Hybrid",
-    sal: "PKR 320,000 \u2013 520,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "Python", "SQL"],
-    extra: ["Docker", "Kubernetes", "AWS"],
-    plats: ["linkedin", "indeed", "github"],
-    url: "https://www.educative.io/careers",
-    ats: "lever"
-  },
-  {
-    id: "co-pk-05",
-    company: "SadaPay",
-    city: "Islamabad",
-    role: "Fintech Platform Engineer (Modern Banking Core)",
-    mode: "Hybrid",
-    sal: "PKR 330,000 \u2013 580,000 / mo",
-    exp: "Mid-Level",
-    core: ["TypeScript", "Node.js", "PostgreSQL", "AWS", "REST APIs"],
-    extra: ["Docker", "Kubernetes", "Redis"],
-    plats: ["linkedin", "indeed", "github"],
-    url: "https://sadapay.pk/careers/",
-    ats: "lever"
-  },
-  {
-    id: "co-pk-06",
-    company: "Motive (KeepTruckin)",
-    city: "Islamabad",
-    role: "IoT & Fleet Management Full Stack Engineer",
-    mode: "Hybrid",
-    sal: "PKR 370,000 \u2013 620,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "AWS"],
-    extra: ["Docker", "Kubernetes", "Kafka"],
-    plats: ["linkedin", "indeed", "github"],
-    url: "https://gomotive.com/company/careers/",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-pk-07",
-    company: "Contour Software",
-    city: "Rawalpindi",
-    role: "Enterprise Software Developer (Constellation Software Core)",
-    mode: "Hybrid",
-    sal: "PKR 310,000 \u2013 540,000 / mo",
-    exp: "Mid-Level",
-    core: ["TypeScript", "React", "SQL", "Node.js", "C#"],
-    extra: [".NET Core", "Azure", "REST APIs"],
-    plats: ["linkedin", "indeed"],
-    url: "https://contour-software.com/careers/",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-08",
-    company: "Discretelogix",
-    city: "Islamabad",
-    role: "Web Application Specialist & UI Architect",
-    mode: "Hybrid",
-    sal: "PKR 240,000 \u2013 400,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "Express", "Git"],
-    plats: ["indeed", "linkedin"],
-    url: "https://discretelogix.com/careers/",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-09",
-    company: "Vintro Tech Hub",
-    city: "Wah Cantt",
-    role: "Full Stack Web & Cloud Applications Engineer",
-    mode: "Hybrid",
-    sal: "PKR 220,000 \u2013 380,000 / mo",
-    exp: "Entry / Junior",
-    core: ["React", "TypeScript", "Node.js", "Tailwind CSS", "SQL"],
-    extra: ["Next.js", "Express", "Docker"],
-    plats: ["indeed", "linkedin", "upwork"],
-    url: "https://pk.indeed.com/jobs?q=Web+Developer&l=Wah+Cantt",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-10",
-    company: "Taxila IT Valley",
-    city: "Taxila",
-    role: "Frontend Software Engineer (React / JavaScript)",
-    mode: "Hybrid",
-    sal: "PKR 210,000 \u2013 360,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "JavaScript", "Tailwind CSS", "REST APIs", "Git"],
-    extra: ["TypeScript", "Next.js", "Redux"],
-    plats: ["indeed", "linkedin"],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Taxila",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-11",
-    company: "10Pearls",
-    city: "Karachi",
-    role: "Senior Web Solutions Architect",
-    mode: "Hybrid",
-    sal: "PKR 350,000 \u2013 600,000 / mo",
-    exp: "Senior",
-    core: ["React", "TypeScript", "Node.js", "Cloud", "REST APIs"],
-    extra: ["GraphQL", "Serverless", "Security"],
-    plats: ["linkedin", "indeed"],
-    url: "https://10pearls.com/careers/",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-12",
-    company: "NayaPay",
-    city: "Karachi",
-    role: "Mobile & Full Stack Developer",
-    mode: "Hybrid",
-    sal: "PKR 260,000 \u2013 440,000 / mo",
-    exp: "Mid-Level",
-    core: ["React Native", "TypeScript", "React", "Node.js", "SQL"],
-    extra: ["GraphQL", "Tailwind CSS", "Jest"],
-    plats: ["indeed", "linkedin"],
-    url: "https://www.nayapay.com/careers",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-13",
-    company: "Bazaar Technologies",
-    city: "Karachi",
-    role: "Software Engineer (Supply Chain & B2B Web)",
-    mode: "Hybrid",
-    sal: "PKR 310,000 \u2013 530,000 / mo",
-    exp: "Mid-Level",
-    core: ["Python", "React", "TypeScript", "PostgreSQL", "Django"],
-    extra: ["FastAPI", "Docker", "AWS"],
-    plats: ["linkedin", "indeed", "github"],
-    url: "https://bazaartech.com/careers",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-pk-14",
-    company: "VentureDive",
-    city: "Lahore",
-    role: "Frontend Engineer (Mobile & React Ecosystem)",
-    mode: "Hybrid",
-    sal: "PKR 240,000 \u2013 390,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Tailwind CSS", "Redux", "REST APIs"],
-    extra: ["React Native", "Next.js", "Jest"],
-    plats: ["linkedin", "indeed"],
-    url: "https://www.venturedive.com/careers/",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-pk-15",
-    company: "Devsinc",
-    city: "Lahore",
-    role: "Full Stack Engineer (Scalable Web Products)",
-    mode: "Hybrid",
-    sal: "PKR 250,000 \u2013 420,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "Node.js", "TypeScript", "PostgreSQL", "GraphQL"],
-    extra: ["Next.js", "Tailwind CSS", "Docker"],
-    plats: ["linkedin", "github", "indeed"],
-    url: "https://devsinc.com/careers",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-16",
-    company: "Peshawar Software Park",
-    city: "Peshawar",
-    role: "Full Stack Web Developer (KPITB Tech Incubator)",
-    mode: "Hybrid",
-    sal: "PKR 220,000 \u2013 370,000 / mo",
-    exp: "Entry / Junior",
-    core: ["React", "TypeScript", "Node.js", "SQL", "Tailwind CSS"],
-    extra: ["Next.js", "MongoDB", "Git"],
-    plats: ["indeed", "linkedin"],
-    url: "https://kpitb.gov.pk",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-17",
-    company: "Algoris Tech",
-    city: "Faisalabad",
-    role: "Software Engineer (Web Applications)",
-    mode: "Hybrid",
-    sal: "PKR 230,000 \u2013 380,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "REST APIs"],
-    extra: ["Tailwind CSS", "Next.js", "Docker"],
-    plats: ["indeed", "linkedin"],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Faisalabad",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-18",
-    company: "Multan Tech Hub",
-    city: "Multan",
-    role: "Full Stack Developer (Web & Cloud Platforms)",
-    mode: "Hybrid",
-    sal: "PKR 220,000 \u2013 360,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "SQL", "PHP"],
-    extra: ["Laravel", "Next.js", "Docker"],
-    plats: ["indeed", "linkedin"],
-    url: "https://pk.indeed.com/jobs?q=Full+Stack&l=Multan",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-19",
-    company: "Gujranwala Software Labs",
-    city: "Gujranwala",
-    role: "Frontend Engineer (React & TypeScript)",
-    mode: "Hybrid",
-    sal: "PKR 220,000 \u2013 370,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Tailwind CSS", "Node.js", "REST APIs"],
-    extra: ["Next.js", "Redux", "Git"],
-    plats: ["indeed", "linkedin", "upwork"],
-    url: "https://pk.indeed.com/jobs?q=React+Developer&l=Gujranwala",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-20",
-    company: "Sialkot Export IT Center",
-    city: "Sialkot",
-    role: "Web Applications Developer (E-Commerce & Portals)",
-    mode: "Hybrid",
-    sal: "PKR 230,000 \u2013 380,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Node.js", "PostgreSQL", "SQL"],
-    extra: ["Next.js", "Tailwind CSS", "REST APIs"],
-    plats: ["indeed", "linkedin"],
-    url: "https://pk.indeed.com/jobs?q=Software+Developer&l=Sialkot",
-    ats: "direct-portal"
-  },
-  {
-    id: "co-pk-21",
-    company: "Abbottabad Innovation Park",
-    city: "Abbottabad",
-    role: "Full Stack Engineer (Cloud & Web Services)",
-    mode: "Hybrid",
-    sal: "PKR 210,000 \u2013 360,000 / mo",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Python", "SQL", "Node.js"],
-    extra: ["FastAPI", "Docker", "Tailwind CSS"],
-    plats: ["indeed", "linkedin"],
-    url: "https://pk.indeed.com/jobs?q=Software+Engineer&l=Abbottabad",
-    ats: "direct-portal"
-  },
-  // ─── Global Remote Leaders & Tech Titans (100% Remote / Worldwide) ───
-  {
-    id: "co-gl-01",
-    company: "Supabase",
-    city: "Remote",
-    role: "Full Stack Engineer (Real-Time Cloud & Developer Platform)",
-    mode: "Remote",
-    sal: "$85,000 \u2013 $135,000 / yr",
-    exp: "Mid-Level",
-    core: ["TypeScript", "React", "Node.js", "PostgreSQL", "REST APIs"],
-    extra: ["GraphQL", "Python", "FastAPI"],
-    plats: ["remoteok", "github", "linkedin"],
-    url: "https://supabase.com/careers",
-    ats: "ashby"
-  },
-  {
-    id: "co-gl-02",
-    company: "Linear",
-    city: "Remote",
-    role: "Frontend Engineer (Design Systems & Micro-Interactions)",
-    mode: "Remote",
-    sal: "$95,000 \u2013 $150,000 / yr",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Tailwind CSS", "UI/UX", "Next.js"],
-    extra: ["Framer Motion", "Figma", "Accessibility"],
-    plats: ["linkedin", "github"],
-    url: "https://linear.app/careers",
-    ats: "ashby"
-  },
-  {
-    id: "co-gl-03",
-    company: "Vercel Enterprise",
-    city: "Remote",
-    role: "Backend & Systems Infrastructure Engineer",
-    mode: "Remote",
-    sal: "$90,000 \u2013 $145,000 / yr",
-    exp: "Mid-Level",
-    core: ["Node.js", "Python", "SQL", "Docker", "TypeScript"],
-    extra: ["AWS", "Redis", "Microservices"],
-    plats: ["remoteok", "github", "linkedin"],
-    url: "https://vercel.com/careers",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-gl-04",
-    company: "Stripe",
-    city: "Remote",
-    role: "API Infrastructure & Integrations Developer",
-    mode: "Remote",
-    sal: "$110,000 \u2013 $170,000 / yr",
-    exp: "Senior",
-    core: ["TypeScript", "Node.js", "Ruby", "PostgreSQL", "REST APIs"],
-    extra: ["Security", "Docker", "Microservices"],
-    plats: ["linkedin", "github"],
-    url: "https://stripe.com/jobs",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-gl-05",
-    company: "GitHub",
-    city: "Remote",
-    role: "Developer Tools & Next-Gen Web UI Engineer",
-    mode: "Remote",
-    sal: "$95,000 \u2013 $155,000 / yr",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Ruby on Rails", "Tailwind CSS", "GraphQL"],
-    extra: ["Accessibility", "Jest", "Docker"],
-    plats: ["github", "linkedin"],
-    url: "https://github.com/about/careers",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-gl-06",
-    company: "Canva",
-    city: "Remote",
-    role: "Frontend Graphics & UI Systems Engineer",
-    mode: "Remote",
-    sal: "$85,000 \u2013 $140,000 / yr",
-    exp: "Mid-Level",
-    core: ["TypeScript", "React", "WebGL", "Canvas API", "Tailwind CSS"],
-    extra: ["Redux", "Rust", "Jest"],
-    plats: ["linkedin", "remoteok"],
-    url: "https://www.canva.com/careers/",
-    ats: "lever"
-  },
-  {
-    id: "co-gl-07",
-    company: "Perplexity AI",
-    city: "Remote",
-    role: "Conversational Search UI & Platform Engineer",
-    mode: "Remote",
-    sal: "$115,000 \u2013 $175,000 / yr",
-    exp: "Senior",
-    core: ["React", "TypeScript", "Next.js", "Python", "Tailwind CSS"],
-    extra: ["FastAPI", "Vector Search", "Redis"],
-    plats: ["github", "linkedin"],
-    url: "https://www.perplexity.ai/careers",
-    ats: "ashby"
-  },
-  {
-    id: "co-gl-08",
-    company: "Notion",
-    city: "Remote",
-    role: "Collaborative Workspace Frontend Engineer",
-    mode: "Remote",
-    sal: "$105,000 \u2013 $165,000 / yr",
-    exp: "Senior",
-    core: ["React", "TypeScript", "Canvas", "PostgreSQL", "Node.js"],
-    extra: ["WebSockets", "Performance", "Tailwind CSS"],
-    plats: ["linkedin", "github"],
-    url: "https://www.notion.so/careers",
-    ats: "lever"
-  },
-  {
-    id: "co-gl-09",
-    company: "Figma",
-    city: "Remote",
-    role: "Design Systems & Web Graphics Developer",
-    mode: "Remote",
-    sal: "$110,000 \u2013 $170,000 / yr",
-    exp: "Senior",
-    core: ["TypeScript", "C++", "WebGL", "React", "WebAssembly"],
-    extra: ["Rust", "Canvas", "Figma Plugins"],
-    plats: ["linkedin", "github"],
-    url: "https://www.figma.com/careers/",
-    ats: "greenhouse"
-  },
-  {
-    id: "co-gl-10",
-    company: "PostHog",
-    city: "Remote",
-    role: "Full Stack Product Analytics Engineer",
-    mode: "Remote",
-    sal: "$100,000 \u2013 $160,000 / yr",
-    exp: "Mid-Level",
-    core: ["React", "TypeScript", "Python", "PostgreSQL", "ClickHouse"],
-    extra: ["Django", "Docker", "Tailwind CSS"],
-    plats: ["github", "linkedin", "remoteok"],
-    url: "https://posthog.com/careers",
-    ats: "ashby"
-  }
+// shared/pakistanCities.ts
+var DEFAULT_LOCATION_LABEL = "Islamabad, Pakistan";
+var PAKISTAN_CITIES = [
+  { key: "islamabad", name: "Islamabad", lat: 33.6844, lng: 73.0479, province: "Islamabad Capital Territory", aliases: ["islamabad capital territory", "pk-is"] },
+  { key: "rawalpindi", name: "Rawalpindi", lat: 33.5651, lng: 73.0169, province: "Punjab", aliases: ["pindi", "chaklala"] },
+  { key: "wahcantt", name: "Wah Cantt", lat: 33.7715, lng: 72.7511, province: "Punjab", aliases: ["wah cantonment", "wah"] },
+  { key: "taxila", name: "Taxila", lat: 33.7463, lng: 72.8397, province: "Punjab" },
+  { key: "lahore", name: "Lahore", lat: 31.5204, lng: 74.3587, province: "Punjab" },
+  { key: "karachi", name: "Karachi", lat: 24.8607, lng: 67.0011, province: "Sindh" },
+  { key: "faisalabad", name: "Faisalabad", lat: 31.4504, lng: 73.135, province: "Punjab", aliases: ["lyallpur"] },
+  { key: "peshawar", name: "Peshawar", lat: 34.0151, lng: 71.5249, province: "Khyber Pakhtunkhwa" },
+  { key: "multan", name: "Multan", lat: 30.1575, lng: 71.5249, province: "Punjab" },
+  { key: "quetta", name: "Quetta", lat: 30.1798, lng: 66.975, province: "Balochistan" },
+  { key: "gujranwala", name: "Gujranwala", lat: 32.1877, lng: 74.1945, province: "Punjab" },
+  { key: "sialkot", name: "Sialkot", lat: 32.4945, lng: 74.5229, province: "Punjab" },
+  { key: "abbottabad", name: "Abbottabad", lat: 34.1688, lng: 73.2215, province: "Khyber Pakhtunkhwa" },
+  { key: "hyderabad", name: "Hyderabad", lat: 25.396, lng: 68.3578, province: "Sindh" },
+  { key: "bahawalpur", name: "Bahawalpur", lat: 29.3544, lng: 71.6911, province: "Punjab" },
+  { key: "sargodha", name: "Sargodha", lat: 32.0836, lng: 72.6711, province: "Punjab" },
+  { key: "sheikhupura", name: "Sheikhupura", lat: 31.7131, lng: 73.9783, province: "Punjab" },
+  { key: "jhelum", name: "Jhelum", lat: 32.9425, lng: 73.7257, province: "Punjab" },
+  { key: "gujrat", name: "Gujrat", lat: 32.5742, lng: 74.0754, province: "Punjab" },
+  { key: "mardan", name: "Mardan", lat: 34.1986, lng: 72.0404, province: "Khyber Pakhtunkhwa" },
+  { key: "sukkur", name: "Sukkur", lat: 27.7052, lng: 68.8574, province: "Sindh" },
+  { key: "kasur", name: "Kasur", lat: 31.1179, lng: 74.4461, province: "Punjab" },
+  { key: "sahiwal", name: "Sahiwal", lat: 30.6682, lng: 73.1114, province: "Punjab" },
+  { key: "okara", name: "Okara", lat: 30.8081, lng: 73.4458, province: "Punjab" },
+  { key: "mingora", name: "Mingora", lat: 34.7758, lng: 72.3625, province: "Khyber Pakhtunkhwa", aliases: ["swat"] },
+  { key: "mirpur", name: "Mirpur", lat: 33.1437, lng: 73.7518, province: "Azad Kashmir" },
+  { key: "muzaffarabad", name: "Muzaffarabad", lat: 34.3595, lng: 73.4708, province: "Azad Kashmir" },
+  { key: "gilgit", name: "Gilgit", lat: 35.9208, lng: 74.3089, province: "Gilgit-Baltistan" }
 ];
+var CITY_BY_KEY = new Map(PAKISTAN_CITIES.map((city) => [city.key, city]));
+function getCityByKey(key) {
+  if (!key) return null;
+  return CITY_BY_KEY.get(key.toLowerCase().replace(/[^a-z]/g, "")) ?? null;
+}
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+var CITY_MATCHERS = PAKISTAN_CITIES.map((city) => ({
+  city,
+  pattern: new RegExp(`(^|[^a-z])(${[city.name, ...city.aliases ?? []].map((n) => escapeRegExp(n.toLowerCase())).join("|")})([^a-z]|$)`)
+}));
+function findKnownCity(text2) {
+  if (!text2) return null;
+  const lower = text2.toLowerCase();
+  for (const { city, pattern } of CITY_MATCHERS) {
+    if (pattern.test(lower)) return city;
+  }
+  const compact = lower.replace(/[^a-z]/g, "");
+  for (const city of PAKISTAN_CITIES) {
+    if (compact.startsWith(city.key)) return city;
+  }
+  return null;
+}
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+function nearestKnownCity(lat, lng) {
+  let best = PAKISTAN_CITIES[0];
+  let bestDistance = Infinity;
+  for (const city of PAKISTAN_CITIES) {
+    const d = distanceKm(lat, lng, city.lat, city.lng);
+    if (d < bestDistance) {
+      best = city;
+      bestDistance = d;
+    }
+  }
+  return { city: best, distanceKm: bestDistance };
+}
+function isValidCoords(coords) {
+  return Boolean(
+    coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng) && Math.abs(coords.lat) <= 90 && Math.abs(coords.lng) <= 180
+  );
+}
+var PROXIMITY_TIER_RANK = {
+  "same-city": 0,
+  nearby: 1,
+  "same-province": 2,
+  remote: 3,
+  "same-country": 4,
+  elsewhere: 5
+};
+var NEARBY_RADIUS_KM = 50;
+function classifyProximity(params) {
+  const { candidateCity, jobCity, jobIsRemote, jobInPakistan } = params;
+  const origin = isValidCoords(params.candidateCoords) ? params.candidateCoords : candidateCity;
+  const target = isValidCoords(params.jobCoords) ? params.jobCoords : jobCity;
+  const dist = origin && target ? distanceKm(origin.lat, origin.lng, target.lat, target.lng) : null;
+  if (jobIsRemote && !jobCity) return { tier: "remote", distanceKm: null };
+  if (candidateCity && jobCity && candidateCity.key === jobCity.key) return { tier: "same-city", distanceKm: dist };
+  if (dist !== null && dist <= NEARBY_RADIUS_KM) return { tier: "nearby", distanceKm: dist };
+  if (candidateCity && jobCity && candidateCity.province === jobCity.province) return { tier: "same-province", distanceKm: dist };
+  if (jobIsRemote) return { tier: "remote", distanceKm: dist };
+  if (jobInPakistan || jobCity) return { tier: "same-country", distanceKm: dist };
+  return { tier: "elsewhere", distanceKm: dist };
+}
+
+// server/services/jobListingUtils.ts
+function publisherToPlatform(publisher) {
+  const p = (publisher || "").toLowerCase();
+  if (p.includes("linkedin")) return "linkedin";
+  if (p.includes("indeed")) return "indeed";
+  if (p.includes("glassdoor")) return "glassdoor";
+  if (p.includes("rozee")) return "rozee";
+  return "googlejobs";
+}
+function inferExperience(title) {
+  const t2 = title.toLowerCase();
+  if (/\b(lead|principal|head|manager|architect)\b/.test(t2)) return "Lead";
+  if (/\b(senior|sr\.?)\b/.test(t2)) return "Senior";
+  if (/\b(junior|jr\.?|intern|internship|trainee|graduate|entry)\b/.test(t2)) return "Entry / Junior";
+  return "Mid-Level";
+}
+function inferWorkMode(isRemote, description) {
+  if (isRemote) return "Remote";
+  return /\bhybrid\b/i.test(description || "") ? "Hybrid" : "On-site";
+}
+var SKILL_POOL = [
+  "React",
+  "TypeScript",
+  "JavaScript",
+  "Node.js",
+  "Python",
+  "Java",
+  "SQL",
+  "PostgreSQL",
+  "MongoDB",
+  "Next.js",
+  "Angular",
+  "Vue.js",
+  "Django",
+  "Laravel",
+  "PHP",
+  ".NET",
+  "C#",
+  "Flutter",
+  "React Native",
+  "Kotlin",
+  "Swift",
+  "AWS",
+  "Azure",
+  "Docker",
+  "Kubernetes",
+  "Go",
+  "GraphQL",
+  "Figma",
+  "Machine Learning"
+];
+function extractSkills(text2) {
+  const lower = text2.toLowerCase();
+  return SKILL_POOL.filter((skill) => lower.includes(skill.toLowerCase())).slice(0, 8);
+}
+function countryName(code) {
+  if (!code) return "";
+  if (code.toUpperCase() === "PK") return "Pakistan";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+// server/services/jobSearchStore.ts
+import { mkdir, readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
+import { tmpdir as tmpdir2 } from "node:os";
+import path5 from "node:path";
+var DEFAULT_CACHE_MINUTES = 720;
+var ENTRY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1e3;
+function currentMonth(now = /* @__PURE__ */ new Date()) {
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+function emptyState() {
+  return { month: currentMonth(), requestsThisMonth: 0, entries: {} };
+}
+function cacheTtlMs2() {
+  const minutes = Number(process.env.JOB_SEARCH_CACHE_MINUTES);
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : DEFAULT_CACHE_MINUTES) * 6e4;
+}
+var JobSearchStore = class {
+  constructor(name, limitEnvVar, defaultMonthlyLimit) {
+    this.name = name;
+    this.limitEnvVar = limitEnvVar;
+    this.defaultMonthlyLimit = defaultMonthlyLimit;
+  }
+  state = null;
+  loading = null;
+  inFlight = /* @__PURE__ */ new Map();
+  monthlyLimit() {
+    const limit = Number(process.env[this.limitEnvVar]);
+    return Number.isFinite(limit) && limit > 0 ? limit : this.defaultMonthlyLimit;
+  }
+  filePath() {
+    const dir = process.env.VERCEL ? tmpdir2() : path5.resolve(process.cwd(), ".data");
+    return path5.join(dir, `job-search-cache-${this.name}.json`);
+  }
+  async load() {
+    if (!this.state) {
+      this.loading ??= (async () => {
+        try {
+          const parsed = JSON.parse(await readFile2(this.filePath(), "utf8"));
+          this.state = parsed?.entries ? parsed : emptyState();
+        } catch {
+          this.state = emptyState();
+        }
+        return this.state;
+      })();
+      await this.loading;
+    }
+    const state = this.state;
+    if (state.month !== currentMonth()) {
+      state.month = currentMonth();
+      state.requestsThisMonth = 0;
+    }
+    return state;
+  }
+  async persist() {
+    if (!this.state || process.env.NODE_ENV === "test") return;
+    try {
+      const cutoff = Date.now() - ENTRY_MAX_AGE_MS;
+      for (const [key, entry] of Object.entries(this.state.entries)) {
+        if (entry.fetchedAt < cutoff) delete this.state.entries[key];
+      }
+      await mkdir(path5.dirname(this.filePath()), { recursive: true });
+      await writeFile2(this.filePath(), JSON.stringify(this.state));
+    } catch (error) {
+      console.warn(`[Jobs] Could not save ${this.name} cache:`, error instanceof Error ? error.message : error);
+    }
+  }
+  /** Returns cached jobs when fresh, otherwise runs `request` once (respecting the monthly limit). */
+  async search(cacheKey2, request) {
+    const state = await this.load();
+    const hit = state.entries[cacheKey2];
+    if (hit && Date.now() - hit.fetchedAt < cacheTtlMs2()) return { jobs: hit.jobs, status: "ok" };
+    const pending2 = this.inFlight.get(cacheKey2);
+    if (pending2) return pending2;
+    const run = (async () => {
+      if (state.requestsThisMonth >= this.monthlyLimit()) return { jobs: hit?.jobs ?? [], status: "quota-exhausted" };
+      state.requestsThisMonth += 1;
+      try {
+        const outcome = await request();
+        if (outcome.kind === "ok") {
+          if (outcome.remaining !== void 0 && Number.isFinite(outcome.remaining)) {
+            state.requestsThisMonth = Math.max(state.requestsThisMonth, this.monthlyLimit() - outcome.remaining);
+          }
+          state.entries[cacheKey2] = { jobs: outcome.jobs, fetchedAt: Date.now() };
+          return { jobs: outcome.jobs, status: "ok" };
+        }
+        if (outcome.kind === "quota-exhausted") {
+          state.requestsThisMonth = this.monthlyLimit();
+          return { jobs: hit?.jobs ?? [], status: "quota-exhausted" };
+        }
+        return { jobs: hit?.jobs ?? [], status: hit ? "cached" : "error" };
+      } catch (error) {
+        console.warn(`[Jobs] ${this.name} request failed:`, error instanceof Error ? error.message : error);
+        return { jobs: hit?.jobs ?? [], status: hit ? "cached" : "error" };
+      } finally {
+        await this.persist();
+      }
+    })().finally(() => this.inFlight.delete(cacheKey2));
+    this.inFlight.set(cacheKey2, run);
+    return run;
+  }
+  /** Test hook: replace in-memory state so each test starts clean. */
+  reset(initial) {
+    this.state = initial ?? emptyState();
+    this.loading = Promise.resolve(this.state);
+    this.inFlight.clear();
+  }
+};
+
+// server/services/jsearchProvider.ts
+var JSEARCH_HOST = "jsearch.p.rapidapi.com";
+var REQUEST_TIMEOUT_MS = 1e4;
+var store = new JobSearchStore("jsearch", "JSEARCH_MONTHLY_LIMIT", 200);
+function isJSearchConfigured() {
+  return Boolean(process.env.JSEARCH_API_KEY?.trim());
+}
+function formatSalary(job) {
+  if (!job.job_min_salary && !job.job_max_salary) return SALARY_NOT_DISCLOSED;
+  const currency = job.job_salary_currency || "";
+  const fmt = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const range = job.job_min_salary && job.job_max_salary ? `${fmt(job.job_min_salary)} \u2013 ${fmt(job.job_max_salary)}` : fmt(job.job_min_salary || job.job_max_salary);
+  const period = job.job_salary_period ? ` / ${job.job_salary_period.toLowerCase()}` : "";
+  return `${currency} ${range}${period}`.trim();
+}
+function mapJSearchJob(job) {
+  if (!job.job_id || !job.job_title || !job.employer_name || !job.job_apply_link) return null;
+  const workMode = inferWorkMode(job.job_is_remote, job.job_description);
+  const country = countryName(job.job_country);
+  const place = [job.job_city, country].filter(Boolean).join(", ") || (workMode === "Remote" ? "Remote" : "Location not listed");
+  const city = job.job_country === "PK" || !job.job_country ? findKnownCity(job.job_city) ?? findKnownCity(job.job_state) : null;
+  const skills = job.job_required_skills?.length ? job.job_required_skills.slice(0, 8) : extractSkills(`${job.job_title} ${job.job_description || ""}`);
+  const publisher = job.job_publisher || "the web";
+  return {
+    id: `jsearch-${job.job_id}`,
+    title: job.job_title,
+    company: job.employer_name,
+    location: `${place} \xB7 ${workMode}`,
+    cityKey: city?.key ?? (workMode === "Remote" && !job.job_city ? "remote" : (job.job_city || "").toLowerCase().replace(/[^a-z]/g, "")),
+    jobUrl: job.job_apply_link,
+    workMode,
+    salaryRange: formatSalary(job),
+    experienceLevel: inferExperience(job.job_title),
+    coreSkills: skills.slice(0, 4),
+    extraSkills: skills.slice(4),
+    platformSources: [publisherToPlatform(job.job_publisher)],
+    whyRecommended: `Live opening posted on ${publisher}${job.job_city ? ` in ${job.job_city}` : ""}.`,
+    talkingPoints: [`Read the full posting on ${publisher} and map each requirement to a project you have shipped.`],
+    sourceAts: "direct-portal",
+    postedAt: job.job_posted_at_datetime_utc ?? null,
+    jobLat: job.job_latitude ?? null,
+    jobLng: job.job_longitude ?? null
+  };
+}
+async function fetchJSearchJobs(params) {
+  const key = process.env.JSEARCH_API_KEY?.trim();
+  if (!key) return { jobs: [], status: "not-configured" };
+  const country = (params.countryCode || "PK").toLowerCase();
+  const query = `${params.role} jobs in ${params.city}`;
+  return store.search(`${country}|${query.toLowerCase()}`, async () => {
+    const url = new URL(`https://${JSEARCH_HOST}/search-v2`);
+    url.searchParams.set("query", query);
+    url.searchParams.set("num_pages", "1");
+    url.searchParams.set("country", country);
+    url.searchParams.set("date_posted", "month");
+    const res = await fetch(url, {
+      headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": JSEARCH_HOST },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+    if (res.status === 429) return { kind: "quota-exhausted" };
+    if (!res.ok) {
+      console.warn(`[Jobs] JSearch returned HTTP ${res.status} for "${query}"`);
+      return { kind: "error" };
+    }
+    const body = await res.json();
+    const rawJobs = Array.isArray(body.data) ? body.data : body.data?.jobs ?? [];
+    const remainingHeader = res.headers.get("x-ratelimit-requests-remaining");
+    return {
+      kind: "ok",
+      jobs: rawJobs.map(mapJSearchJob).filter((job) => job !== null),
+      remaining: remainingHeader !== null ? Number(remainingHeader) : void 0
+    };
+  });
+}
+
+// server/services/serpapiProvider.ts
+import { createHash } from "node:crypto";
+var SERPAPI_URL = "https://serpapi.com/search.json";
+var REQUEST_TIMEOUT_MS2 = 12e3;
+var store2 = new JobSearchStore("serpapi", "SERPAPI_MONTHLY_LIMIT", 250);
+function isSerpApiConfigured() {
+  return Boolean(process.env.SERPAPI_API_KEY?.trim());
+}
+function relativeAgeToIso(postedAt, now = Date.now()) {
+  const match = postedAt?.match(/(\d+)\s*\+?\s*(minute|hour|day|week|month)/i);
+  if (!match) return null;
+  const unitMs = { minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6 };
+  return new Date(now - Number(match[1]) * unitMs[match[2].toLowerCase()]).toISOString();
+}
+function mapSerpApiJob(job, countryCode) {
+  const applyLink = job.apply_options?.find((o) => o.link)?.link || job.share_link;
+  if (!job.title || !job.company_name || !applyLink) return null;
+  const publisher = (job.via || "").replace(/^via\s+/i, "").trim() || "Google Jobs";
+  const ext = job.detected_extensions ?? {};
+  const workMode = inferWorkMode(ext.work_from_home || /\banywhere\b|\bremote\b/i.test(job.location || ""), job.description);
+  const rawPlace = /^\s*anywhere\s*$/i.test(job.location || "") ? "" : (job.location || "").trim();
+  const inPakistan = countryCode.toUpperCase() === "PK";
+  const city = inPakistan ? findKnownCity(rawPlace) : null;
+  const cityName = rawPlace.split(",")[0].trim();
+  const place = !rawPlace ? workMode === "Remote" ? "Remote" : "Location not listed" : rawPlace.includes(",") ? rawPlace : `${rawPlace}, ${countryName(countryCode)}`;
+  const skills = extractSkills(`${job.title} ${job.description || ""}`);
+  const stableId = createHash("sha1").update(job.job_id || `${job.title}|${job.company_name}|${applyLink}`).digest("hex").slice(0, 16);
+  return {
+    id: `serpapi-${stableId}`,
+    title: job.title,
+    company: job.company_name,
+    location: `${place} \xB7 ${workMode}`,
+    cityKey: city?.key ?? (workMode === "Remote" && !cityName ? "remote" : cityName.toLowerCase().replace(/[^a-z]/g, "")),
+    jobUrl: applyLink,
+    workMode,
+    salaryRange: ext.salary || SALARY_NOT_DISCLOSED,
+    experienceLevel: inferExperience(job.title),
+    coreSkills: skills.slice(0, 4),
+    extraSkills: skills.slice(4),
+    platformSources: [publisherToPlatform(publisher)],
+    whyRecommended: `Live opening posted on ${publisher}${cityName ? ` in ${cityName}` : ""}.`,
+    talkingPoints: [`Read the full posting on ${publisher} and map each requirement to a project you have shipped.`],
+    sourceAts: "direct-portal",
+    postedAt: relativeAgeToIso(ext.posted_at)
+  };
+}
+async function fetchSerpApiJobs(params) {
+  const key = process.env.SERPAPI_API_KEY?.trim();
+  if (!key) return { jobs: [], status: "not-configured" };
+  const country = (params.countryCode || "PK").toUpperCase();
+  const query = `${params.role} jobs in ${params.city}`;
+  return store2.search(`${country}|${query.toLowerCase()}`, async () => {
+    const url = new URL(SERPAPI_URL);
+    url.searchParams.set("engine", "google_jobs");
+    url.searchParams.set("q", query);
+    url.searchParams.set("gl", country.toLowerCase());
+    url.searchParams.set("hl", "en");
+    url.searchParams.set("api_key", key);
+    const res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS2) });
+    const data = await res.json().catch(() => ({}));
+    if (data.error) {
+      if (/run out of searches|searches per month|plan limit|exceeded/i.test(data.error) || res.status === 429) return { kind: "quota-exhausted" };
+      if (/hasn't returned any results/i.test(data.error)) return { kind: "ok", jobs: [] };
+      console.warn(`[Jobs] SerpApi error for "${query}": ${data.error}`);
+      return { kind: "error" };
+    }
+    if (!res.ok) {
+      console.warn(`[Jobs] SerpApi returned HTTP ${res.status} for "${query}"`);
+      return { kind: res.status === 429 ? "quota-exhausted" : "error" };
+    }
+    return {
+      kind: "ok",
+      jobs: (data.jobs_results ?? []).map((job) => mapSerpApiJob(job, country)).filter((job) => job !== null)
+    };
+  });
+}
+
+// server/services/localJobs.ts
+var PROVIDERS = [
+  { name: "jsearch", search: fetchJSearchJobs },
+  { name: "serpapi", search: fetchSerpApiJobs }
+];
+var STATUS_PRIORITY = ["ok", "cached", "quota-exhausted", "error", "not-configured"];
+function isLocalJobSearchConfigured() {
+  return isJSearchConfigured() || isSerpApiConfigured();
+}
+function normalize(text2) {
+  return text2.toLowerCase().replace(/\b(pvt|private|ltd|limited|inc|llc|co)\b/g, "").replace(/[^a-z0-9]/g, "");
+}
+function postingKey(job) {
+  return `${normalize(job.company)}|${normalize(job.title)}|${job.cityKey}`;
+}
+function mergePostings(lists) {
+  const seen = /* @__PURE__ */ new Set();
+  const merged = [];
+  for (const list of lists) {
+    for (const job of list) {
+      const key = postingKey(job);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(job);
+    }
+  }
+  return merged;
+}
+async function fetchLocalJobs(params) {
+  const settled = await Promise.allSettled(PROVIDERS.map((p) => p.search(params)));
+  const attempts = settled.map((outcome, i) => ({
+    ...outcome.status === "fulfilled" ? outcome.value : { jobs: [], status: "error" },
+    provider: PROVIDERS[i].name
+  }));
+  const contributing = attempts.filter((a) => a.jobs.length > 0);
+  const jobs = mergePostings(contributing.map((a) => a.jobs));
+  const status = attempts.some((a) => a.status === "ok" && a.jobs.length > 0) ? "ok" : [...contributing.length > 0 ? contributing : attempts].sort(
+    (a, b) => STATUS_PRIORITY.indexOf(a.status) - STATUS_PRIORITY.indexOf(b.status)
+  )[0].status;
+  return { jobs, status, providers: contributing.map((a) => a.provider) };
+}
+
+// server/services/careerOpsScraper.ts
+var JOB_PLATFORM_SOURCES = [
+  "linkedin",
+  "indeed",
+  "glassdoor",
+  "rozee",
+  "googlejobs",
+  "remotive",
+  "remoteok",
+  "arbeitnow",
+  "jobicy",
+  "themuse",
+  "weworkremotely"
+];
+var SALARY_NOT_DISCLOSED = "Salary not disclosed";
 var cachedRemoteJobs = [];
 var lastRemoteFetchTime = 0;
 var REMOTE_CACHE_TTL = 3 * 60 * 1e3;
@@ -4465,16 +4398,7 @@ function extractSkillsFromText(tags, fallbackTitle) {
       found.push(skill);
     }
   }
-  if (found.length === 0) {
-    return {
-      core: ["React", "TypeScript", "Node.js"],
-      extra: ["Git", "REST APIs", "SQL"]
-    };
-  }
-  return {
-    core: found.slice(0, 4),
-    extra: found.slice(4, 7).length > 0 ? found.slice(4, 7) : ["Git", "REST APIs"]
-  };
+  return { core: found.slice(0, 4), extra: found.slice(4, 7) };
 }
 async function fetchRemotiveJobs() {
   try {
@@ -4497,11 +4421,11 @@ async function fetchRemotiveJobs() {
         cityKey: "remote",
         jobUrl: item.url || "https://remotive.com",
         workMode: "Remote",
-        salaryRange: item.salary || "$95,000 \u2013 $155,000 / yr",
+        salaryRange: item.salary || SALARY_NOT_DISCLOSED,
         experienceLevel: (item.title || "").toLowerCase().includes("senior") ? "Senior" : "Mid-Level",
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["remotive", "remoteok"],
+        platformSources: ["remotive"],
         whyRecommended: `Live verified software opening aggregated from Remotive developer board.`,
         talkingPoints: [
           `Detail your experience delivering production web features with ${skills.core.slice(0, 2).join(" & ")}.`,
@@ -4539,11 +4463,11 @@ async function fetchRemoteOKJobs() {
           cityKey: "remote",
           jobUrl: item.url || `https://remoteok.com/remote-jobs/${item.id}`,
           workMode: "Remote",
-          salaryRange: item.salary_min && item.salary_max ? `$${Math.round(item.salary_min / 1e3)}k \u2013 $${Math.round(item.salary_max / 1e3)}k / yr` : "$90,000 \u2013 $150,000 / yr",
+          salaryRange: item.salary_min && item.salary_max ? `$${Math.round(item.salary_min / 1e3)}k \u2013 $${Math.round(item.salary_max / 1e3)}k / yr` : SALARY_NOT_DISCLOSED,
           experienceLevel: (item.position || "").toLowerCase().includes("senior") ? "Senior" : "Mid-Level",
           coreSkills: skills.core,
           extraSkills: skills.extra,
-          platformSources: ["remoteok", "github"],
+          platformSources: ["remoteok"],
           whyRecommended: `Live real-time tech posting aggregated from RemoteOK.`,
           talkingPoints: [
             `Discuss clean architecture and high-performance delivery across ${skills.core.join(", ")}.`
@@ -4580,11 +4504,11 @@ async function fetchArbeitnowJobs() {
         cityKey: isRemote ? "remote" : "global",
         jobUrl: item.url || "https://www.arbeitnow.com",
         workMode: isRemote ? "Remote" : "Hybrid",
-        salaryRange: "$85,000 \u2013 $145,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel: (item.title || "").toLowerCase().includes("senior") ? "Senior" : "Mid-Level",
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["arbeitnow", "linkedin"],
+        platformSources: ["arbeitnow"],
         whyRecommended: `Live Europe-focused & global remote tech opportunity from Arbeitnow job board.`,
         talkingPoints: [
           `Demonstrate strong component lifecycle and API communication using ${skills.core.slice(0, 2).join(" & ")}.`
@@ -4618,11 +4542,11 @@ async function fetchJobicyJobs() {
         cityKey: "remote",
         jobUrl: item.url || "https://jobicy.com",
         workMode: "Remote",
-        salaryRange: item.annualSalaryMin && item.annualSalaryMax ? `$${Math.round(item.annualSalaryMin / 1e3)}k \u2013 $${Math.round(item.annualSalaryMax / 1e3)}k / yr` : "$90,000 \u2013 $160,000 / yr",
+        salaryRange: item.annualSalaryMin && item.annualSalaryMax ? `$${Math.round(item.annualSalaryMin / 1e3)}k \u2013 $${Math.round(item.annualSalaryMax / 1e3)}k / yr` : SALARY_NOT_DISCLOSED,
         experienceLevel: (item.jobLevel || "").toLowerCase().includes("senior") ? "Senior" : "Mid-Level",
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["jobicy", "remoteok"],
+        platformSources: ["jobicy"],
         whyRecommended: `Live remote engineering opening from Jobicy global talent network.`,
         talkingPoints: [
           `Highlight experience building robust, scale-ready systems in ${skills.core.slice(0, 2).join(", ")}.`
@@ -4663,11 +4587,11 @@ async function fetchTheMuseJobs() {
         cityKey: isRemote ? "remote" : "global",
         jobUrl: landingPage,
         workMode: isRemote ? "Remote" : "Hybrid",
-        salaryRange: "$100,000 \u2013 $170,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel,
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["themuse", "linkedin"],
+        platformSources: ["themuse"],
         whyRecommended: `Live verified opening from The Muse 500k+ enterprise career network.`,
         talkingPoints: [
           `Demonstrate strong engineering fundamentals, clean modular design, and ${skills.core.slice(0, 2).join(" & ")}.`,
@@ -4707,18 +4631,18 @@ async function fetchWWRJobs() {
       }
       const skills = extractSkillsFromText(void 0, title);
       results.push({
-        id: `wwr-${Math.random().toString(36).slice(2, 8)}`,
+        id: `wwr-${jobUrl.replace(/[^a-z0-9]/gi, "").slice(-24)}`,
         title,
         company,
         location: "Remote (Global / Worldwide)",
         cityKey: "remote",
         jobUrl,
         workMode: "Remote",
-        salaryRange: "$95,000 \u2013 $165,000 / yr",
+        salaryRange: SALARY_NOT_DISCLOSED,
         experienceLevel: title.toLowerCase().includes("senior") || title.toLowerCase().includes("lead") ? "Senior" : "Mid-Level",
         coreSkills: skills.core,
         extraSkills: skills.extra,
-        platformSources: ["remoteok", "github", "linkedin"],
+        platformSources: ["weworkremotely"],
         whyRecommended: `Live verified remote software role from WeWorkRemotely engineering board.`,
         talkingPoints: [
           `Emphasize autonomous delivery, clean code practices, and modern full-stack workflows.`
@@ -4767,161 +4691,138 @@ async function fetchLiveRemoteAPIs() {
   }
   return cachedRemoteJobs;
 }
+var OPEN_REMOTE_REGIONS = /(worldwide|global|anywhere|asia|apac|pakistan|emea|south asia|middle east)/i;
+function isRemoteOpenToPakistan(location) {
+  const region = location.match(/remote\s*\(([^)]*)\)/i)?.[1];
+  if (!region) return true;
+  return OPEN_REMOTE_REGIONS.test(region);
+}
+function buildJobBoardSearchLinks(role, city, placeLabel, countryCode) {
+  const q = encodeURIComponent(role);
+  const inPakistan = !countryCode || countryCode === "PK";
+  const links = [
+    { platform: "linkedin", label: `LinkedIn jobs in ${city}`, url: `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${encodeURIComponent(placeLabel)}` },
+    { platform: "indeed", label: `Indeed jobs in ${city}`, url: `https://${inPakistan ? "pk." : "www."}indeed.com/jobs?q=${q}&l=${encodeURIComponent(city)}` },
+    { platform: "googlejobs", label: `Google Jobs in ${city}`, url: `https://www.google.com/search?ibp=htl;jobs&q=${encodeURIComponent(`${role} jobs in ${placeLabel}`)}` }
+  ];
+  if (inPakistan) {
+    links.splice(2, 0, { platform: "rozee", label: `Rozee.pk jobs in ${city}`, url: `https://www.rozee.pk/job/jsearch/q/${encodeURIComponent(`${role} ${city}`)}` });
+  }
+  return links;
+}
+function proximityReason(tier, job, candidateLabel, distance) {
+  const km = distance !== null ? ` \xB7 ~${distance} km away` : "";
+  switch (tier) {
+    case "same-city":
+      return `\u{1F4CD} In your city (${candidateLabel})${distance ? km : ""}`;
+    case "nearby":
+      return `\u{1F4CD} Near you${km}`;
+    case "same-province":
+      return `\u{1F5FA}\uFE0F Same province${km}`;
+    case "remote":
+      return "\u{1F310} Remote \xB7 open to candidates in Pakistan";
+    case "same-country":
+      return `\u{1F4CC} Elsewhere in the country${km}`;
+    default:
+      return job.workMode === "Remote" ? `\u{1F310} Remote, but limited to ${job.location.match(/\(([^)]*)\)/)?.[1] ?? "other regions"}` : "\u2708\uFE0F Abroad";
+  }
+}
+var TIER_SCORE_BONUS = {
+  "same-city": 0.1,
+  nearby: 0.08,
+  "same-province": 0.05,
+  remote: 0.04,
+  "same-country": 0.01,
+  elsewhere: 0
+};
 async function scrapeAndEvaluateLiveJobs(params) {
-  const userLoc = (params.candidateLocation || "Islamabad, Pakistan").trim();
-  const userLocLower = userLoc.toLowerCase();
-  const rawSkills = params.candidateSkills || "React, TypeScript, Node.js, SQL, Tailwind CSS";
+  if (!isLocalJobSearchConfigured()) {
+    return { jobs: [], localSearch: "not-configured", localProviders: [] };
+  }
+  const userLoc = (params.candidateLocation || DEFAULT_LOCATION_LABEL).trim();
+  const candidateCity = findKnownCity(userLoc);
+  const candidateLabel = candidateCity?.name ?? userLoc.split(",")[0].trim();
+  const countryCode = (params.countryCode || (candidateCity ? "PK" : null) || "PK").toUpperCase();
+  const rawSkills = params.candidateSkills || "";
   const userSkillSet = new Set(
     rawSkills.split(/[,;\n]+/).map((s) => s.trim().toLowerCase().replace(/[^\w#+]/g, "")).filter(Boolean)
   );
   const targetRoleText = (params.targetRole || params.currentJob || "Software Engineer").trim();
-  const combinedRegistry = BASE_COMPANIES_RAW.map((b) => {
-    const isPak = b.city !== "Remote";
-    const cityKey = b.city.toLowerCase().replace(/[^a-z]/g, "");
-    const locStr = isPak ? `${b.city}, Pakistan \xB7 ${b.mode}` : `Remote (Global / Worldwide)`;
-    return {
-      id: b.id,
-      title: b.role,
-      company: b.company,
-      location: locStr,
-      cityKey: isPak ? cityKey : "remote",
-      jobUrl: b.url,
-      workMode: b.mode,
-      salaryRange: b.sal,
-      experienceLevel: b.exp,
-      coreSkills: b.core,
-      extraSkills: b.extra,
-      platformSources: b.plats,
-      whyRecommended: isPak ? `Priority local alignment with your target tech stack in ${b.city}, verified via ${b.plats.join(" & ")} signals.` : `100% remote global engineering opportunity with high-impact product scope in ${b.core.slice(0, 3).join(", ")}.`,
-      talkingPoints: [
-        `Discuss your project component architecture, clean state management, and type contracts.`,
-        `Highlight your capability to deliver production-ready features on rapid sprint cycles.`
-      ],
-      sourceAts: b.ats
-    };
-  });
-  try {
-    const apiJobs = await fetchLiveRemoteAPIs();
-    if (apiJobs.length > 0) {
-      combinedRegistry.push(...apiJobs);
-    }
-  } catch {
-  }
-  const userCityClean = userLoc.split(",")[0].trim();
-  const userCityKey = userCityClean.toLowerCase().replace(/[^a-z]/g, "");
-  const existsInBase = combinedRegistry.some((j) => j.cityKey === userCityKey);
-  if (!existsInBase && userCityClean.length > 2 && userCityKey !== "remote") {
-    combinedRegistry.unshift(
-      {
-        id: `dyn-${userCityKey}-01`,
-        title: `${targetRoleText} (Local Tech Hub & AI Systems)`,
-        company: `${userCityClean} Tech Solutions`,
-        location: `${userCityClean}, Pakistan \xB7 Hybrid`,
-        cityKey: userCityKey,
-        jobUrl: `https://pk.indeed.com/jobs?q=${encodeURIComponent(targetRoleText)}&l=${encodeURIComponent(userCityClean)}`,
-        workMode: "Hybrid",
-        salaryRange: "PKR 240,000 \u2013 420,000 / mo",
-        experienceLevel: "Mid-Level",
-        coreSkills: Array.from(userSkillSet).slice(0, 4).map((s) => s.toUpperCase()),
-        extraSkills: ["REST APIs", "Git", "Docker"],
-        platformSources: ["indeed", "linkedin"],
-        whyRecommended: `Direct regional alignment located right in ${userCityClean}, matched with your core skills.`,
-        talkingPoints: [
-          `Discuss your verified competencies and immediate availability for ${userCityClean} hybrid delivery.`,
-          `Highlight experience building scalable full-stack applications.`
-        ],
-        sourceAts: "direct-portal"
-      },
-      {
-        id: `dyn-${userCityKey}-02`,
-        title: `Full Stack Applications Specialist (${userCityClean} Region)`,
-        company: "Apex Cloud Services",
-        location: `${userCityClean}, Pakistan \xB7 Hybrid`,
-        cityKey: userCityKey,
-        jobUrl: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(targetRoleText)}&location=${encodeURIComponent(userCityClean + ", Pakistan")}`,
-        workMode: "Hybrid",
-        salaryRange: "PKR 260,000 \u2013 450,000 / mo",
-        experienceLevel: "Mid-Level",
-        coreSkills: ["React", "TypeScript", "Node.js", "SQL"],
-        extraSkills: ["Tailwind CSS", "Next.js", "PostgreSQL"],
-        platformSources: ["linkedin", "indeed"],
-        whyRecommended: `Active hiring pipeline near ${userCityClean} offering strong engineering compensation.`,
-        talkingPoints: [
-          `Detail your architectural patterns and error recovery mechanisms.`
-        ],
-        sourceAts: "direct-portal"
-      }
-    );
-  }
-  const evaluatedList = combinedRegistry.map((job, index) => {
+  const canSearchLocally = Boolean(candidateLabel) && candidateLabel !== "Your location";
+  const [localRes, remoteRes] = await Promise.allSettled([
+    canSearchLocally ? fetchLocalJobs({ role: targetRoleText, city: candidateCity?.name ?? candidateLabel, countryCode }) : Promise.resolve({ jobs: [], status: "error", providers: [] }),
+    fetchLiveRemoteAPIs()
+  ]);
+  const local = localRes.status === "fulfilled" ? localRes.value : { jobs: [], status: "error", providers: [] };
+  const combined = [...local.jobs, ...remoteRes.status === "fulfilled" ? remoteRes.value : []];
+  const evaluatedList = combined.map((job) => {
     const matchingSkills = job.coreSkills.filter((skill) => {
       const norm = skill.trim().toLowerCase().replace(/[^\w#+]/g, "");
       return userSkillSet.has(norm) || Array.from(userSkillSet).some((userS) => userS.includes(norm) || norm.includes(userS));
     });
-    const matchRatio = job.coreSkills.length > 0 ? matchingSkills.length / job.coreSkills.length : 0.6;
-    const isExactCity = userLocLower.includes(job.cityKey) && job.cityKey !== "remote";
-    const isCountryMatch = userLocLower.includes("pakistan") && job.location.toLowerCase().includes("pakistan");
-    const isRemoteFriendly = job.workMode === "Remote";
-    const isLocationMatch = isExactCity || isCountryMatch || isRemoteFriendly;
-    let locationMatchReason = "Regional Hub Match";
-    if (isExactCity) {
-      locationMatchReason = `\u{1F4CD} Matched to your city (${userLoc})`;
-    } else if (isCountryMatch) {
-      locationMatchReason = `\u{1F4CD} Matched to your region (${userLoc})`;
-    } else if (isRemoteFriendly) {
-      locationMatchReason = `\u{1F310} 100% Remote \xB7 Open to ${userLoc}`;
-    }
-    const locationBonus = isExactCity ? 0.08 : isCountryMatch ? 0.05 : isRemoteFriendly ? 0.04 : 0;
-    const basePct = Math.round((matchRatio * 0.55 + 0.35 + locationBonus) * 100);
-    const cappedPct = Math.min(98, Math.max(76, basePct));
+    const matchRatio = job.coreSkills.length > 0 ? matchingSkills.length / job.coreSkills.length : 0.5;
+    const jobInCountry = countryCode === "PK" ? /pakistan/i.test(job.location) : job.cityKey !== "remote" && /^(jsearch|serpapi)-/.test(job.id);
+    const jobCity = job.cityKey === "remote" ? null : getCityByKey(job.cityKey) ?? (/pakistan/i.test(job.location) ? findKnownCity(job.location) : null);
+    const remoteReachable = job.workMode === "Remote" && isRemoteOpenToPakistan(job.location);
+    const sameUnknownCity = !candidateCity && !jobCity && job.cityKey !== "remote" && job.cityKey === candidateLabel.toLowerCase().replace(/[^a-z]/g, "");
+    const proximity = sameUnknownCity ? { tier: "same-city", distanceKm: null } : classifyProximity({
+      candidateCity,
+      candidateCoords: params.candidateCoords,
+      jobCity,
+      jobCoords: job.jobLat != null && job.jobLng != null ? { lat: job.jobLat, lng: job.jobLng } : null,
+      jobIsRemote: remoteReachable,
+      jobInPakistan: jobInCountry
+    });
+    const { tier, distanceKm: distanceKm2 } = proximity;
+    const isLocationMatch = PROXIMITY_TIER_RANK[tier] <= PROXIMITY_TIER_RANK.remote;
+    const basePct = Math.round((matchRatio * 0.55 + 0.35 + TIER_SCORE_BONUS[tier]) * 100);
+    const cappedPct = Math.min(98, Math.max(40, basePct));
     const score = Number((cappedPct / 100 * 5).toFixed(1));
-    const displayTitle = job.company === "Capregsoft" && targetRoleText.length > 3 ? `${targetRoleText} (Core Platform & AI Systems)` : job.title;
-    const connectorNames = job.platformSources.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" & ");
+    const sourceName = job.platformSources.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" & ");
     return {
       ...job,
-      title: displayTitle,
+      proximityTier: tier,
+      distanceKm: distanceKm2,
       isLocationMatch,
-      locationMatchReason,
-      matchedSkills: matchingSkills.length > 0 ? matchingSkills : [job.coreSkills[0], job.coreSkills[1]].filter(Boolean),
+      locationMatchReason: proximityReason(tier, job, candidateLabel, distanceKm2),
+      matchedSkills: matchingSkills,
       matchScore: score,
       matchPercentage: cappedPct,
       dimensions: {
-        technicalFit: Math.min(99, Math.max(75, cappedPct + (index % 2 === 0 ? 2 : -1))),
-        seniorityFit: Math.min(96, Math.max(80, cappedPct - index % 3)),
-        workModeFit: isExactCity || isRemoteFriendly ? 98 : 90,
-        growthFit: Math.min(97, Math.max(85, cappedPct + 1))
+        technicalFit: cappedPct,
+        seniorityFit: cappedPct,
+        workModeFit: tier === "same-city" || tier === "nearby" || tier === "remote" ? 98 : tier === "same-province" ? 85 : 60,
+        growthFit: cappedPct
       },
       reportBlocks: {
-        blockA: `${job.company} is actively hiring for ${displayTitle} in ${job.location}. Compensation band: ${job.salaryRange}. (Source: ${connectorNames} / Live Pipeline).`,
-        blockB: `Direct responsibility for architecting mission-critical features, high reliability, and clean software delivery.`,
-        blockC: `Core required technologies: ${job.coreSkills.join(", ")}. Complementary tooling: ${job.extraSkills.join(", ")}.`,
-        blockD: `Your profile exhibits a ${cappedPct}% alignment with verified skill signals across ${matchingSkills.join(", ") || "core web tooling"}.`,
-        blockE: `Connector signals verified through ${connectorNames} corroborate your hands-on code and project delivery background.`,
+        blockA: `${job.company} is hiring for ${job.title} in ${job.location}. Compensation: ${job.salaryRange}. (Source: ${sourceName}).`,
+        blockB: `Read the full description on ${sourceName} for responsibilities and team details.`,
+        blockC: job.coreSkills.length > 0 ? `Technologies named in the posting: ${[...job.coreSkills, ...job.extraSkills].join(", ")}.` : `The posting does not list specific technologies; read the full description on the source site.`,
+        blockD: matchingSkills.length > 0 ? `Your profile skills that appear in this posting: ${matchingSkills.join(", ")}.` : `None of your profile skills are named in this posting's summary. Check the full description before applying.`,
+        blockE: `Listing source: ${sourceName}.`,
         blockF: job.talkingPoints.join(" "),
-        blockG: `Verified legitimate corporate hiring pipeline; cross-checked with active public career portal.`,
-        blockH: `Highlight your work with ${matchingSkills.slice(0, 3).join(", ") || "TypeScript and modern web frameworks"} and initiate interview practice simulation.`
+        blockG: `Live posting from ${sourceName}. Apply only through the official link and never pay a fee to apply.`,
+        blockH: matchingSkills.length > 0 ? `Lead with your work in ${matchingSkills.slice(0, 3).join(", ")}, then practise this role in an AI mock interview.` : `Tailor your CV to the posting's requirements, then practise this role in an AI mock interview.`
       }
     };
   });
   const filtered = evaluatedList.filter((job) => {
-    if (params.platform && params.platform !== "all" && !job.platformSources.includes(params.platform)) {
-      return false;
-    }
-    if (params.workMode && params.workMode !== "all" && job.workMode !== params.workMode) {
-      return false;
-    }
+    if (params.platform && params.platform !== "all" && !job.platformSources.includes(params.platform)) return false;
+    if (params.workMode && params.workMode !== "all" && job.workMode !== params.workMode) return false;
     if (params.query && params.query.trim()) {
       const q = params.query.toLowerCase();
-      const match = job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q) || job.location.toLowerCase().includes(q) || job.matchedSkills.some((s) => s.toLowerCase().includes(q));
+      const match = job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q) || job.location.toLowerCase().includes(q) || job.coreSkills.some((s) => s.toLowerCase().includes(q));
       if (!match) return false;
     }
     return true;
   });
-  return filtered.sort((a, b) => {
-    if (a.isLocationMatch && !b.isLocationMatch) return -1;
-    if (!a.isLocationMatch && b.isLocationMatch) return 1;
+  const jobs = filtered.sort((a, b) => {
+    const tierDiff = PROXIMITY_TIER_RANK[a.proximityTier] - PROXIMITY_TIER_RANK[b.proximityTier];
+    if (tierDiff !== 0) return tierDiff;
+    if (a.distanceKm !== null && b.distanceKm !== null && a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
     return b.matchScore - a.matchScore;
   });
+  return { jobs, localSearch: local.status, localProviders: local.providers };
 }
 
 // server/routers/careerProfile.ts
@@ -4932,6 +4833,7 @@ var maxResumeBytes = 5 * 1024 * 1024;
 var allowedProfilePhotoTypes = ["image/jpeg", "image/png", "image/webp"];
 var maxProfilePhotoBytes = 2 * 1024 * 1024;
 var resumeReviewCacheVersion = "resume-review-v3:";
+var liveJobsLimiter = createRateLimiter({ windowMs: 60 * 60 * 1e3, max: 40 });
 var nullableText = (max) => z5.string().trim().max(max).nullable().optional();
 var nullablePublicHttpsUrl = (max) => nullableText(max).transform((value) => value ? normalizePublicHttpsUrl2(value) || null : value);
 var careerProfileInput = z5.object({
@@ -5040,8 +4942,8 @@ var careerProfileRouter = router({
     if (!fileBuffer) {
       if (!current?.resumeKey || !current.resumeMimeType) throw new Error("Upload a resume before starting AI review.");
       mimeTypeToUse = current.resumeMimeType;
-      const cacheKey2 = `${resumeReviewCacheVersion}${current.resumeKey}`;
-      if (current.resumeReviewCacheKey === cacheKey2 && current.resumeReviewCache) {
+      const cacheKey3 = `${resumeReviewCacheVersion}${current.resumeKey}`;
+      if (current.resumeReviewCacheKey === cacheKey3 && current.resumeReviewCache) {
         try {
           const cached = resumeSuggestionSchema.safeParse(normalizeResumePayload(JSON.parse(current.resumeReviewCache)));
           if (cached.success) {
@@ -5049,7 +4951,7 @@ var careerProfileRouter = router({
             if (isUsable) {
               const serializedCache = JSON.stringify(cached.data);
               if (serializedCache !== current.resumeReviewCache) {
-                await upsertCareerProfile(ctx.user.id, { resumeReviewCache: serializedCache, resumeReviewCacheKey: cacheKey2 });
+                await upsertCareerProfile(ctx.user.id, { resumeReviewCache: serializedCache, resumeReviewCacheKey: cacheKey3 });
               }
               return { suggestions: cached.data, aiMessage: null, source: "cached" };
             }
@@ -5106,11 +5008,11 @@ var careerProfileRouter = router({
       mimeTypeToUse = "application/pdf";
     }
     const targetKey = current?.resumeKey;
-    const cacheKey = targetKey ? `${resumeReviewCacheVersion}${targetKey}` : null;
+    const cacheKey2 = targetKey ? `${resumeReviewCacheVersion}${targetKey}` : null;
     try {
       const suggestions = await extractResumeSuggestions(fileBuffer, mimeTypeToUse);
-      if (cacheKey) {
-        await upsertCareerProfile(ctx.user.id, { resumeReviewCache: JSON.stringify(suggestions), resumeReviewCacheKey: cacheKey });
+      if (cacheKey2) {
+        await upsertCareerProfile(ctx.user.id, { resumeReviewCache: JSON.stringify(suggestions), resumeReviewCacheKey: cacheKey2 });
       }
       return { suggestions, aiMessage: null, source: "fresh" };
     } catch (error) {
@@ -5159,59 +5061,221 @@ var careerProfileRouter = router({
     });
     return { profile };
   }),
-  fetchLiveJobs: publicProcedure.input(z5.object({
-    query: z5.string().trim().max(160).optional(),
+  // Signed-in only: each new city/role search spends the shared, quota-limited job-search API.
+  fetchLiveJobs: protectedProcedure.input(z5.object({
     location: z5.string().trim().max(160).optional(),
+    lat: z5.number().min(-90).max(90).optional(),
+    lng: z5.number().min(-180).max(180).optional(),
+    countryCode: z5.string().trim().length(2).optional(),
     workMode: z5.enum(["all", "Remote", "Hybrid", "On-site"]).optional(),
-    platform: z5.enum([
-      "all",
-      "meta",
-      "linkedin",
-      "indeed",
-      "upwork",
-      "remoteok",
-      "github",
-      "fiverr",
-      "arbeitnow",
-      "remotive",
-      "themuse",
-      "jobicy"
-    ]).optional()
+    platform: z5.enum(["all", ...JOB_PLATFORM_SOURCES]).optional()
   }).optional()).query(async ({ ctx, input }) => {
-    const profile = ctx.user ? await getCareerProfileByUserId(ctx.user.id) ?? null : null;
-    const userLocation = input?.location || profile?.location || "Islamabad, Pakistan";
-    const userSkills = profile?.skills || "React, TypeScript, Node.js, SQL";
-    const targetRole = input?.query || profile?.targetRole || profile?.careerField || "Software Engineer";
-    const currentJob = profile?.currentJob || void 0;
-    const evaluatedJobs = await scrapeAndEvaluateLiveJobs({
+    if (!liveJobsLimiter.check(`user:${ctx.user.id}`).allowed) {
+      throw new TRPCError4({ code: "TOO_MANY_REQUESTS", message: "Too many job searches. Please wait a few minutes and try again." });
+    }
+    const profile = await getCareerProfileByUserId(ctx.user.id) ?? null;
+    const userLocation = input?.location || profile?.location || DEFAULT_LOCATION_LABEL;
+    const targetRole = profile?.targetRole || profile?.careerField || profile?.currentJob || "Software Engineer";
+    const candidateCoords = input?.lat !== void 0 && input?.lng !== void 0 ? { lat: input.lat, lng: input.lng } : null;
+    const { jobs, localSearch, localProviders } = await scrapeAndEvaluateLiveJobs({
       candidateLocation: userLocation,
-      candidateSkills: userSkills,
+      candidateCoords,
+      countryCode: input?.countryCode ?? null,
+      candidateSkills: profile?.skills || "",
       targetRole,
-      currentJob,
       workMode: input?.workMode,
-      platform: input?.platform,
-      query: input?.query
+      platform: input?.platform
     });
+    const knownCity = findKnownCity(userLocation);
+    const searchCity = knownCity?.name ?? userLocation.split(",")[0].trim();
+    const placeLabel = knownCity ? `${knownCity.name}, Pakistan` : userLocation;
     return {
-      jobs: evaluatedJobs,
+      jobs,
       lastSyncedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      userLocation
+      userLocation,
+      targetRole,
+      searchLinks: buildJobBoardSearchLinks(targetRole, searchCity, placeLabel, input?.countryCode ?? (knownCity ? "PK" : null)),
+      localSearch,
+      localProviders
     };
   })
 });
 
+// server/routers/location.ts
+import { TRPCError as TRPCError5 } from "@trpc/server";
+import { z as z6 } from "zod";
+
+// server/services/location.ts
+var SNAP_TO_KNOWN_CITY_KM = 40;
+var CACHE_TTL_MS = 24 * 60 * 60 * 1e3;
+var CACHE_MAX_ENTRIES = 5e3;
+var REQUEST_TIMEOUT_MS3 = 5e3;
+var USER_AGENT = "FutureMakerAI/1.0 (job-radar location lookup)";
+var cache2 = /* @__PURE__ */ new Map();
+var googleDisabledReason = null;
+function cacheKey(lat, lng) {
+  return `${lat.toFixed(2)},${lng.toFixed(2)}`;
+}
+function fromKnownCity(city, lat, lng, source, formattedAddress) {
+  return {
+    city: city.name,
+    cityKey: city.key,
+    province: city.province,
+    countryCode: "PK",
+    label: `${city.name}, Pakistan`,
+    formattedAddress: formattedAddress || `${city.name}, ${city.province}, Pakistan`,
+    lat,
+    lng,
+    source
+  };
+}
+function matchFields(fields) {
+  for (const field of fields) {
+    const city = findKnownCity(field);
+    if (city) return city;
+  }
+  return null;
+}
+function stripAdminSuffix(name) {
+  return name.replace(/\s+(district|division|tehsil|city tehsil|capital territory)$/i, "").trim();
+}
+function resolveUnknownPlace(params) {
+  const { lat, lng, countryCode, source } = params;
+  if (countryCode === "PK") {
+    const nearest = nearestKnownCity(lat, lng);
+    if (nearest.distanceKm <= SNAP_TO_KNOWN_CITY_KM) return fromKnownCity(nearest.city, lat, lng, source, params.formattedAddress);
+  }
+  const city = params.rawCity ? stripAdminSuffix(params.rawCity) : params.province || "Unknown location";
+  const country = params.countryName || (countryCode === "PK" ? "Pakistan" : "");
+  return {
+    city,
+    cityKey: null,
+    province: params.province,
+    countryCode,
+    label: country ? `${city}, ${country}` : city,
+    formattedAddress: params.formattedAddress || city,
+    lat,
+    lng,
+    source
+  };
+}
+async function reverseGeocodeWithGoogle(lat, lng) {
+  const key = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  if (!key || googleDisabledReason) return null;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS3) });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data.status === "REQUEST_DENIED") {
+    googleDisabledReason = data.error_message || "REQUEST_DENIED";
+    console.warn(`[Location] Google Geocoding disabled for this process: ${googleDisabledReason}`);
+    return null;
+  }
+  if (data.status !== "OK" || !data.results?.length) return null;
+  const components = data.results[0].address_components;
+  const pick = (type) => components.find((c) => c.types.includes(type))?.long_name;
+  const locality = pick("locality");
+  const admin2 = pick("administrative_area_level_2");
+  const admin3 = pick("administrative_area_level_3");
+  const admin1 = pick("administrative_area_level_1");
+  const country = components.find((c) => c.types.includes("country"));
+  const formattedAddress = data.results[0].formatted_address;
+  const known = matchFields([locality, admin3, admin2, admin1]);
+  if (known) return fromKnownCity(known, lat, lng, "google", formattedAddress);
+  return resolveUnknownPlace({
+    lat,
+    lng,
+    rawCity: locality || admin3 || admin2 || null,
+    province: admin1 || null,
+    countryCode: country?.short_name?.toUpperCase() || null,
+    countryName: country?.long_name || null,
+    formattedAddress,
+    source: "google"
+  });
+}
+async function reverseGeocodeWithNominatim(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, "Accept-Language": "en" },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS3)
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const addr = data.address;
+  if (!addr) return null;
+  const known = matchFields([
+    addr.city,
+    addr.town,
+    addr.municipality,
+    addr.city_district,
+    addr.county,
+    addr.state_district,
+    addr.state,
+    addr["ISO3166-2-lvl4"]
+  ]);
+  const formattedAddress = data.display_name || "";
+  if (known) return fromKnownCity(known, lat, lng, "openstreetmap", formattedAddress);
+  return resolveUnknownPlace({
+    lat,
+    lng,
+    rawCity: addr.city || addr.town || addr.municipality || addr.county || null,
+    province: addr.state || null,
+    countryCode: addr.country_code?.toUpperCase() || null,
+    countryName: addr.country || null,
+    formattedAddress,
+    source: "openstreetmap"
+  });
+}
+async function reverseGeocode(lat, lng) {
+  if (!isValidCoords({ lat, lng })) throw new Error("Invalid coordinates.");
+  const key = cacheKey(lat, lng);
+  const now = Date.now();
+  const hit = cache2.get(key);
+  if (hit && hit.expiresAt > now) return { ...hit.value, lat, lng };
+  let resolved = null;
+  for (const provider of [reverseGeocodeWithGoogle, reverseGeocodeWithNominatim]) {
+    try {
+      resolved = await provider(lat, lng);
+    } catch (error) {
+      console.warn(`[Location] ${provider.name} failed:`, error instanceof Error ? error.message : error);
+    }
+    if (resolved) break;
+  }
+  if (!resolved) {
+    const nearest = nearestKnownCity(lat, lng);
+    resolved = nearest.distanceKm <= SNAP_TO_KNOWN_CITY_KM ? fromKnownCity(nearest.city, lat, lng, "nearest-city") : resolveUnknownPlace({ lat, lng, rawCity: "Your location", province: null, countryCode: null, countryName: null, formattedAddress: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, source: "nearest-city" });
+  }
+  if (resolved.source !== "nearest-city") {
+    if (cache2.size >= CACHE_MAX_ENTRIES) cache2.delete(cache2.keys().next().value);
+    cache2.set(key, { value: resolved, expiresAt: now + CACHE_TTL_MS });
+  }
+  return resolved;
+}
+
+// server/routers/location.ts
+var reverseGeocodeLimiter = createRateLimiter({ windowMs: 6e4, max: 20 });
+var locationRouter = router({
+  reverseGeocode: publicProcedure.input(z6.object({ lat: z6.number().min(-90).max(90), lng: z6.number().min(-180).max(180) })).mutation(async ({ ctx, input }) => {
+    const key = ctx.user ? `user:${ctx.user.id}` : `ip:${ctx.req.ip ?? ctx.req.socket?.remoteAddress ?? "unknown"}`;
+    if (!reverseGeocodeLimiter.check(key).allowed) {
+      throw new TRPCError5({ code: "TOO_MANY_REQUESTS", message: "Too many location lookups. Please wait a minute." });
+    }
+    return reverseGeocode(input.lat, input.lng);
+  })
+});
+
 // server/routers/practicePreparation.ts
-import { TRPCError as TRPCError4 } from "@trpc/server";
+import { TRPCError as TRPCError6 } from "@trpc/server";
 
 // server/companyPreparation.ts
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { mkdtemp as mkdtemp2, readFile as readFile2, rm as rm2, writeFile as writeFile2 } from "node:fs/promises";
-import { tmpdir as tmpdir2 } from "node:os";
+import { mkdtemp as mkdtemp2, readFile as readFile3, rm as rm2, writeFile as writeFile3 } from "node:fs/promises";
+import { tmpdir as tmpdir3 } from "node:os";
 import { join as join2 } from "node:path";
 import * as mammoth2 from "mammoth";
 import { convert as convert2 } from "@opendataloader/pdf";
-import { z as z6 } from "zod";
+import { z as z7 } from "zod";
 
 // server/_core/llm.ts
 init_env();
@@ -5510,34 +5574,34 @@ var allowedFileMimeTypes = [
   "image/png",
   "image/webp"
 ];
-var companyPreparationInput = z6.object({
-  companyName: z6.string().trim().min(1, "Add the company name.").max(180),
-  companyWebsite: z6.string().trim().max(500).default(""),
-  targetRole: z6.string().trim().min(1, "Add the target role.").max(180),
-  jobDescription: z6.string().trim().max(18e3).default(""),
-  notes: z6.string().trim().max(8e3).default(""),
-  profileCategoryIds: z6.array(z6.enum(practiceProfileCategoryIds)).max(practiceProfileCategories.length).default(practiceProfileCategoryIds),
-  links: z6.array(z6.string().trim().max(500)).max(8).default([]),
-  files: z6.array(z6.object({
-    name: z6.string().trim().min(1).max(180),
-    mimeType: z6.enum(allowedFileMimeTypes),
-    contentBase64: z6.string().min(4).max(45e5)
+var companyPreparationInput = z7.object({
+  companyName: z7.string().trim().min(1, "Add the company name.").max(180),
+  companyWebsite: z7.string().trim().max(500).default(""),
+  targetRole: z7.string().trim().min(1, "Add the target role.").max(180),
+  jobDescription: z7.string().trim().max(18e3).default(""),
+  notes: z7.string().trim().max(8e3).default(""),
+  profileCategoryIds: z7.array(z7.enum(practiceProfileCategoryIds)).max(practiceProfileCategories.length).default(practiceProfileCategoryIds),
+  links: z7.array(z7.string().trim().max(500)).max(8).default([]),
+  files: z7.array(z7.object({
+    name: z7.string().trim().min(1).max(180),
+    mimeType: z7.enum(allowedFileMimeTypes),
+    contentBase64: z7.string().min(4).max(45e5)
   })).max(4).default([])
 });
-var companyBriefSchema = z6.object({
-  companySummary: z6.string().trim().min(1).max(1500),
-  roleSummary: z6.string().trim().min(1).max(1500),
-  responsibilities: z6.array(z6.string().trim().min(1).max(260)).max(10),
-  requiredSkills: z6.array(z6.string().trim().min(1).max(100)).max(18),
-  preferredSkills: z6.array(z6.string().trim().min(1).max(100)).max(18),
-  technologySignals: z6.array(z6.string().trim().min(1).max(100)).max(14),
-  interviewThemes: z6.array(z6.string().trim().min(1).max(180)).max(12),
-  workingStyleSignals: z6.array(z6.string().trim().min(1).max(180)).max(10),
-  sourceAttributions: z6.array(z6.object({
-    sourceLabel: z6.string().trim().min(1).max(180),
-    support: z6.string().trim().min(1).max(360)
+var companyBriefSchema = z7.object({
+  companySummary: z7.string().trim().min(1).max(1500),
+  roleSummary: z7.string().trim().min(1).max(1500),
+  responsibilities: z7.array(z7.string().trim().min(1).max(260)).max(10),
+  requiredSkills: z7.array(z7.string().trim().min(1).max(100)).max(18),
+  preferredSkills: z7.array(z7.string().trim().min(1).max(100)).max(18),
+  technologySignals: z7.array(z7.string().trim().min(1).max(100)).max(14),
+  interviewThemes: z7.array(z7.string().trim().min(1).max(180)).max(12),
+  workingStyleSignals: z7.array(z7.string().trim().min(1).max(180)).max(10),
+  sourceAttributions: z7.array(z7.object({
+    sourceLabel: z7.string().trim().min(1).max(180),
+    support: z7.string().trim().min(1).max(360)
   })).max(18),
-  uncertaintyNotes: z6.array(z6.string().trim().min(1).max(260)).max(10)
+  uncertaintyNotes: z7.array(z7.string().trim().min(1).max(260)).max(10)
 });
 function base64ByteSize2(value) {
   const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
@@ -5601,12 +5665,12 @@ function flattenPdfElements2(value, output) {
   for (const [key, child] of Object.entries(record)) if (key !== "content") flattenPdfElements2(child, output);
 }
 async function extractPdfText2(buffer) {
-  const directory = await mkdtemp2(join2(tmpdir2(), "futuremaker-company-"));
+  const directory = await mkdtemp2(join2(tmpdir3(), "futuremaker-company-"));
   const inputPath = join2(directory, "source.pdf");
   try {
-    await writeFile2(inputPath, buffer);
+    await writeFile3(inputPath, buffer);
     await convert2(inputPath, { outputDir: directory, format: ["json"], quiet: true, readingOrder: "xycut", keepLineBreaks: true, imageOutput: "off", threads: "1" });
-    const parsed = JSON.parse(await readFile2(join2(directory, "source.json"), "utf8"));
+    const parsed = JSON.parse(await readFile3(join2(directory, "source.json"), "utf8"));
     const parts = [];
     flattenPdfElements2(parsed, parts);
     const text2 = parts.join("\n").replace(/\u0000/g, "").trim().slice(0, maxSourceTextCharacters);
@@ -5901,24 +5965,24 @@ ${textSources || "No text extraction was available; use the supplied images only
 }
 
 // server/routers/practicePreparation.ts
-import { z as z7 } from "zod";
-var answerGradeSchema = z7.object({
-  technicalAccuracy: z7.number().min(0).max(100),
-  relevance: z7.number().min(0).max(100),
-  completeness: z7.number().min(0).max(100),
-  reasoning: z7.number().min(0).max(100),
-  communication: z7.number().min(0).max(100),
-  evidence: z7.string().min(1).max(700),
-  strengths: z7.array(z7.string().min(1).max(240)).max(4),
-  gaps: z7.array(z7.string().min(1).max(240)).max(5),
-  feedback: z7.string().min(1).max(1e3),
-  modelAnswer: z7.string().min(1).max(3e3)
+import { z as z8 } from "zod";
+var answerGradeSchema = z8.object({
+  technicalAccuracy: z8.number().min(0).max(100),
+  relevance: z8.number().min(0).max(100),
+  completeness: z8.number().min(0).max(100),
+  reasoning: z8.number().min(0).max(100),
+  communication: z8.number().min(0).max(100),
+  evidence: z8.string().min(1).max(700),
+  strengths: z8.array(z8.string().min(1).max(240)).max(4),
+  gaps: z8.array(z8.string().min(1).max(240)).max(5),
+  feedback: z8.string().min(1).max(1e3),
+  modelAnswer: z8.string().min(1).max(3e3)
 });
-var interviewAnswerEvaluationSchema = z7.object({
-  evaluations: z7.array(answerGradeSchema),
-  strengths: z7.array(z7.string().min(1).max(240)).max(6),
-  improvements: z7.array(z7.string().min(1).max(300)).max(6),
-  aiAdvice: z7.string().min(1).max(1500)
+var interviewAnswerEvaluationSchema = z8.object({
+  evaluations: z8.array(answerGradeSchema),
+  strengths: z8.array(z8.string().min(1).max(240)).max(6),
+  improvements: z8.array(z8.string().min(1).max(300)).max(6),
+  aiAdvice: z8.string().min(1).max(1500)
 });
 function calculateInterviewAnswerScore(evaluation) {
   return Math.round(
@@ -6044,53 +6108,53 @@ async function evaluateInterviewAnswersWithAI(input) {
     })
   };
 }
-var evaluationScorecardSchema = z7.object({
-  sessionId: z7.number().optional(),
-  overallScore: z7.number().min(0).max(100),
-  overallScoreLabel: z7.string().optional(),
-  interviewReadiness: z7.number().min(0).max(100),
-  readinessLabel: z7.string().optional(),
-  confidenceLevel: z7.number().min(0).max(100),
-  confidenceLabel: z7.string().optional(),
-  communicationScore: z7.number().min(0).max(100),
-  communicationLabel: z7.string().optional(),
-  radarMetrics: z7.array(
-    z7.object({
-      key: z7.string(),
-      label: z7.string(),
-      value: z7.number().min(0).max(100),
-      fullMark: z7.number().default(100)
+var evaluationScorecardSchema = z8.object({
+  sessionId: z8.number().optional(),
+  overallScore: z8.number().min(0).max(100),
+  overallScoreLabel: z8.string().optional(),
+  interviewReadiness: z8.number().min(0).max(100),
+  readinessLabel: z8.string().optional(),
+  confidenceLevel: z8.number().min(0).max(100),
+  confidenceLabel: z8.string().optional(),
+  communicationScore: z8.number().min(0).max(100),
+  communicationLabel: z8.string().optional(),
+  radarMetrics: z8.array(
+    z8.object({
+      key: z8.string(),
+      label: z8.string(),
+      value: z8.number().min(0).max(100),
+      fullMark: z8.number().default(100)
     })
   ),
-  progressMetrics: z7.array(
-    z7.object({
-      key: z7.string(),
-      label: z7.string(),
-      value: z7.number().min(0).max(100)
+  progressMetrics: z8.array(
+    z8.object({
+      key: z8.string(),
+      label: z8.string(),
+      value: z8.number().min(0).max(100)
     })
   ),
-  interviewStats: z7.object({
-    totalQuestions: z7.number(),
-    relevantAnswers: z7.string(),
-    averageAnswerTime: z7.string(),
-    fillerWordsUsage: z7.enum(["Low", "Moderate", "High"]),
-    clarityAndStructure: z7.enum(["Good", "Excellent", "Needs Work"]),
-    rating: z7.number().min(0).max(5),
-    maxRating: z7.number().default(5)
+  interviewStats: z8.object({
+    totalQuestions: z8.number(),
+    relevantAnswers: z8.string(),
+    averageAnswerTime: z8.string(),
+    fillerWordsUsage: z8.enum(["Low", "Moderate", "High"]),
+    clarityAndStructure: z8.enum(["Good", "Excellent", "Needs Work"]),
+    rating: z8.number().min(0).max(5),
+    maxRating: z8.number().default(5)
   }),
-  strengths: z7.array(z7.string()),
-  improvements: z7.array(
-    z7.object({
-      id: z7.string(),
-      text: z7.string(),
-      badge: z7.enum(["Improve", "Moderate", "Needs Practice", "Crucial"]),
-      badgeVariant: z7.enum(["orange", "yellow", "red", "purple"])
+  strengths: z8.array(z8.string()),
+  improvements: z8.array(
+    z8.object({
+      id: z8.string(),
+      text: z8.string(),
+      badge: z8.enum(["Improve", "Moderate", "Needs Practice", "Crucial"]),
+      badgeVariant: z8.enum(["orange", "yellow", "red", "purple"])
     })
   ),
-  aiAdvice: z7.string(),
-  nextGoal: z7.string(),
-  companyName: z7.string().optional(),
-  targetRole: z7.string().optional()
+  aiAdvice: z8.string(),
+  nextGoal: z8.string(),
+  companyName: z8.string().optional(),
+  targetRole: z8.string().optional()
 });
 var STAGE_CURRICULUM_DETAILS = {
   1: {
@@ -6290,26 +6354,26 @@ var practicePreparationRouter = router({
   }),
   // Real-time synchronization of dynamic questions, candidate answers, ML biometrics, and reinforcement feedback
   syncLiveProgress: protectedProcedure.input(
-    z7.object({
-      sessionId: z7.number(),
-      currentLevel: z7.number().optional(),
-      askedQuestions: z7.array(z7.string()).optional(),
-      recordedAnswers: z7.array(z7.string()).optional(),
-      liveMetrics: z7.object({
-        eyeContact: z7.number().optional(),
-        confidence: z7.number().optional(),
-        communicationClarity: z7.number().optional(),
-        contentRelevance: z7.number().optional(),
-        bodyLanguage: z7.number().optional(),
-        languageSkills: z7.number().optional(),
-        speechFluency: z7.number().optional(),
-        eyeOpenness: z7.number().optional(),
-        hesitationCount: z7.number().optional(),
-        stutterCount: z7.number().optional(),
-        wpm: z7.number().optional()
+    z8.object({
+      sessionId: z8.number(),
+      currentLevel: z8.number().optional(),
+      askedQuestions: z8.array(z8.string()).optional(),
+      recordedAnswers: z8.array(z8.string()).optional(),
+      liveMetrics: z8.object({
+        eyeContact: z8.number().optional(),
+        confidence: z8.number().optional(),
+        communicationClarity: z8.number().optional(),
+        contentRelevance: z8.number().optional(),
+        bodyLanguage: z8.number().optional(),
+        languageSkills: z8.number().optional(),
+        speechFluency: z8.number().optional(),
+        eyeOpenness: z8.number().optional(),
+        hesitationCount: z8.number().optional(),
+        stutterCount: z8.number().optional(),
+        wpm: z8.number().optional()
       }).optional(),
-      status: z7.enum(["generated", "in_progress", "completed"]).optional(),
-      dynamicLevels: z7.array(z7.any()).optional()
+      status: z8.enum(["generated", "in_progress", "completed"]).optional(),
+      dynamicLevels: z8.array(z8.any()).optional()
     })
   ).mutation(async ({ ctx, input }) => {
     const existing = await getLatestInterviewSessionByUserId(ctx.user.id);
@@ -6340,10 +6404,10 @@ var practicePreparationRouter = router({
     return { success: true, updated };
   }),
   updateSessionLevel: protectedProcedure.input(
-    z7.object({
-      sessionId: z7.number(),
-      level: z7.number().min(1).max(10),
-      status: z7.enum(["generated", "in_progress", "completed"]).optional()
+    z8.object({
+      sessionId: z8.number(),
+      level: z8.number().min(1).max(10),
+      status: z8.enum(["generated", "in_progress", "completed"]).optional()
     })
   ).mutation(async ({ ctx, input }) => {
     const updated = await updateInterviewSession(input.sessionId, ctx.user.id, {
@@ -6898,22 +6962,22 @@ var practicePreparationRouter = router({
   // When the client sends real ML-measured liveMetrics (camera + voice analytics),
   // the scorecard uses those genuine values instead of heuristic estimates.
   evaluateLiveInterview: protectedProcedure.input(
-    z7.object({
-      sessionId: z7.number(),
-      levelNumber: z7.number().min(1).max(10),
-      questions: z7.array(z7.string()),
-      answers: z7.array(z7.string()),
-      elapsedSeconds: z7.number(),
-      fillerWordsUsage: z7.enum(["Low", "Moderate", "High"]).optional(),
-      liveMetrics: z7.object({
-        eyeContact: z7.number().min(0).max(100),
-        confidence: z7.number().min(0).max(100),
-        communicationClarity: z7.number().min(0).max(100),
-        contentRelevance: z7.number().min(0).max(100),
-        bodyLanguage: z7.number().min(0).max(100),
-        languageSkills: z7.number().min(0).max(100),
-        wpm: z7.number().optional(),
-        fillerCount: z7.number().optional()
+    z8.object({
+      sessionId: z8.number(),
+      levelNumber: z8.number().min(1).max(10),
+      questions: z8.array(z8.string()),
+      answers: z8.array(z8.string()),
+      elapsedSeconds: z8.number(),
+      fillerWordsUsage: z8.enum(["Low", "Moderate", "High"]).optional(),
+      liveMetrics: z8.object({
+        eyeContact: z8.number().min(0).max(100),
+        confidence: z8.number().min(0).max(100),
+        communicationClarity: z8.number().min(0).max(100),
+        contentRelevance: z8.number().min(0).max(100),
+        bodyLanguage: z8.number().min(0).max(100),
+        languageSkills: z8.number().min(0).max(100),
+        wpm: z8.number().optional(),
+        fillerCount: z8.number().optional()
       }).optional()
     })
   ).mutation(async ({ ctx, input }) => {
@@ -6970,7 +7034,7 @@ var practicePreparationRouter = router({
         "[Interview evaluation] AI grading failed:",
         error instanceof Error ? error.message : "Unknown AI evaluation error"
       );
-      throw new TRPCError4({
+      throw new TRPCError6({
         code: "INTERNAL_SERVER_ERROR",
         message: "AI answer evaluation is unavailable right now. Your scorecard was not saved; please try again."
       });
@@ -7261,6 +7325,7 @@ var appRouter = router({
   system: systemRouter,
   auth: authRouter,
   careerProfile: careerProfileRouter,
+  location: locationRouter,
   practicePreparation: practicePreparationRouter
 });
 
@@ -7324,8 +7389,8 @@ function createApp() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
-      onError({ error, path: path5 }) {
-        console.error(`[tRPC Error at ${path5 ?? "unknown"}]:`, error);
+      onError({ error, path: path6 }) {
+        console.error(`[tRPC Error at ${path6 ?? "unknown"}]:`, error);
       }
     })
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { DEFAULT_CITY_NAME, findKnownCity } from "@shared/pakistanCities";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Info,
@@ -51,7 +52,7 @@ export default function InterviewPerformanceDashboard() {
     refetchOnWindowFocus: true,
   });
 
-  const [selectedCity, setSelectedCity] = useState("Islamabad");
+  const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY_NAME);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const hasInitializedCity = useRef(false);
 
@@ -114,11 +115,9 @@ export default function InterviewPerformanceDashboard() {
   // Initialize City from Profile if available
   useEffect(() => {
     if (!hasInitializedCity.current && profileQuery.data?.location) {
-      const matchedCity = ["Islamabad", "Lahore", "Karachi", "Rawalpindi", "Faisalabad", "Peshawar", "Multan", "Quetta"].find(
-        (c) => profileQuery.data?.location?.toLowerCase().includes(c.toLowerCase())
-      );
+      const matchedCity = findKnownCity(profileQuery.data.location);
       if (matchedCity) {
-        setSelectedCity(matchedCity);
+        setSelectedCity(matchedCity.name);
         hasInitializedCity.current = true;
       }
     }

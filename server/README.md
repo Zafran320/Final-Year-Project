@@ -1,6 +1,6 @@
 # Server — 3-Layer Architecture
 
-CareerTwin AI uses a clean **3-layer architecture** on the server side.
+FutureMaker AI uses a clean **3-layer architecture** on the server side.
 
 ```
 server/

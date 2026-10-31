@@ -1,10 +1,13 @@
 import { randomUUID } from "node:crypto";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getCareerProfileByUserId, upsertCareerProfile } from "../db";
 import { extractResumeSuggestions, normalizePublicHttpsUrl, normalizeResumePayload, resumeSuggestionSchema } from "../gemini";
 import { getGitHubRepositoryMetadataForLinks } from "../github";
 import { storageGetBuffer, storageGetSignedUrl, storagePut } from "../storage";
-import { scrapeAndEvaluateLiveJobs } from "../services/careerOpsScraper";
+import { JOB_PLATFORM_SOURCES, buildJobBoardSearchLinks, scrapeAndEvaluateLiveJobs } from "../services/careerOpsScraper";
+import { DEFAULT_LOCATION_LABEL, findKnownCity } from "../../shared/pakistanCities";
+import { createRateLimiter } from "../_core/requestGuards";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { allowedResumeTypes, type AllowedResumeType } from "../../shared/const";
 export { allowedResumeTypes, type AllowedResumeType };
@@ -16,6 +19,8 @@ const maxResumeBytes = 5 * 1024 * 1024;
 const allowedProfilePhotoTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 const maxProfilePhotoBytes = 2 * 1024 * 1024;
 const resumeReviewCacheVersion = "resume-review-v3:";
+// Normal browsing needs a handful of searches per hour; this stops one account from draining the monthly job-search quota.
+const liveJobsLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 40 });
 
 const nullableText = (max: number) => z.string().trim().max(max).nullable().optional();
 const nullablePublicHttpsUrl = (max: number) => nullableText(max).transform((value) => value ? normalizePublicHttpsUrl(value) || null : value);
@@ -283,45 +288,47 @@ export const careerProfileRouter = router({
     return { profile };
   }),
 
-  fetchLiveJobs: publicProcedure.input(z.object({
-    query: z.string().trim().max(160).optional(),
+  // Signed-in only: each new city/role search spends the shared, quota-limited job-search API.
+  fetchLiveJobs: protectedProcedure.input(z.object({
     location: z.string().trim().max(160).optional(),
+    lat: z.number().min(-90).max(90).optional(),
+    lng: z.number().min(-180).max(180).optional(),
+    countryCode: z.string().trim().length(2).optional(),
     workMode: z.enum(["all", "Remote", "Hybrid", "On-site"]).optional(),
-    platform: z.enum([
-      "all",
-      "meta",
-      "linkedin",
-      "indeed",
-      "upwork",
-      "remoteok",
-      "github",
-      "fiverr",
-      "arbeitnow",
-      "remotive",
-      "themuse",
-      "jobicy",
-    ]).optional(),
+    platform: z.enum(["all", ...JOB_PLATFORM_SOURCES]).optional(),
   }).optional()).query(async ({ ctx, input }) => {
-    const profile = ctx.user ? (await getCareerProfileByUserId(ctx.user.id)) ?? null : null;
-    const userLocation = input?.location || profile?.location || "Islamabad, Pakistan";
-    const userSkills = profile?.skills || "React, TypeScript, Node.js, SQL";
-    const targetRole = input?.query || profile?.targetRole || profile?.careerField || "Software Engineer";
-    const currentJob = profile?.currentJob || undefined;
+    if (!liveJobsLimiter.check(`user:${ctx.user.id}`).allowed) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many job searches. Please wait a few minutes and try again." });
+    }
+    const profile = (await getCareerProfileByUserId(ctx.user.id)) ?? null;
+    const userLocation = input?.location || profile?.location || DEFAULT_LOCATION_LABEL;
+    // The role comes from the profile only. Free-text search is filtered on the client so typing
+    // never triggers a new (quota-limited) job search.
+    const targetRole = profile?.targetRole || profile?.careerField || profile?.currentJob || "Software Engineer";
+    const candidateCoords = input?.lat !== undefined && input?.lng !== undefined ? { lat: input.lat, lng: input.lng } : null;
 
-    const evaluatedJobs = await scrapeAndEvaluateLiveJobs({
+    const { jobs, localSearch, localProviders } = await scrapeAndEvaluateLiveJobs({
       candidateLocation: userLocation,
-      candidateSkills: userSkills,
+      candidateCoords,
+      countryCode: input?.countryCode ?? null,
+      candidateSkills: profile?.skills || "",
       targetRole,
-      currentJob,
       workMode: input?.workMode,
       platform: input?.platform,
-      query: input?.query,
     });
 
+    const knownCity = findKnownCity(userLocation);
+    const searchCity = knownCity?.name ?? userLocation.split(",")[0].trim();
+    const placeLabel = knownCity ? `${knownCity.name}, Pakistan` : userLocation;
+
     return {
-      jobs: evaluatedJobs,
+      jobs,
       lastSyncedAt: new Date().toISOString(),
       userLocation,
+      targetRole,
+      searchLinks: buildJobBoardSearchLinks(targetRole, searchCity, placeLabel, input?.countryCode ?? (knownCity ? "PK" : null)),
+      localSearch,
+      localProviders,
     };
   }),
 });

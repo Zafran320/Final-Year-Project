@@ -31,88 +31,56 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import { FaGithub, FaLinkedinIn } from "react-icons/fa";
-import { SiFiverr, SiIndeed, SiMeta, SiUpwork } from "react-icons/si";
+import { FaGlobe, FaGoogle, FaLinkedinIn } from "react-icons/fa";
+import { SiIndeed } from "react-icons/si";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { STORAGE_KEYS } from "@/lib/brand";
+import { JobSearchStatusNotice, jobSearchStatusMessage } from "@/components/JobSearchStatusNotice";
+import { useJobApplications } from "@/lib/jobApplications";
+import { useUserLocation } from "@/lib/userLocation";
+import { PAKISTAN_CITIES } from "@shared/pakistanCities";
+import type { JobPlatformSource } from "../../../server/services/careerOpsScraper";
 
-type ConnectionPlatform =
-  | "meta"
-  | "linkedin"
-  | "indeed"
-  | "upwork"
-  | "remoteok"
-  | "github"
-  | "fiverr"
-  | "arbeitnow"
-  | "remotive"
-  | "themuse"
-  | "jobicy";
+type ConnectionPlatform = JobPlatformSource;
 
 const platformMeta: Record<
   ConnectionPlatform,
   { name: string; Icon: IconType; color: string }
 > = {
-  meta: { name: "Meta", Icon: SiMeta, color: "#0668E1" },
   linkedin: { name: "LinkedIn", Icon: FaLinkedinIn, color: "#0a66c2" },
   indeed: { name: "Indeed", Icon: SiIndeed, color: "#2164f3" },
-  upwork: { name: "Upwork", Icon: SiUpwork, color: "#14a800" },
-  remoteok: { name: "RemoteOK", Icon: FaGithub, color: "#00b4d8" },
-  github: { name: "GitHub", Icon: FaGithub, color: "#9ca3af" },
-  fiverr: { name: "Fiverr", Icon: SiFiverr, color: "#1dbf73" },
-  arbeitnow: { name: "Arbeitnow", Icon: SiIndeed, color: "#10b981" },
-  remotive: { name: "Remotive", Icon: FaGithub, color: "#3b82f6" },
-  themuse: { name: "The Muse", Icon: SiMeta, color: "#06b6d4" },
-  jobicy: { name: "Jobicy", Icon: SiUpwork, color: "#8b5cf6" },
+  remoteok: { name: "RemoteOK", Icon: FaGlobe, color: "#00b4d8" },
+  arbeitnow: { name: "Arbeitnow", Icon: FaGlobe, color: "#10b981" },
+  remotive: { name: "Remotive", Icon: FaGlobe, color: "#3b82f6" },
+  themuse: { name: "The Muse", Icon: FaGlobe, color: "#06b6d4" },
+  jobicy: { name: "Jobicy", Icon: FaGlobe, color: "#8b5cf6" },
+  weworkremotely: { name: "We Work Remotely", Icon: FaGlobe, color: "#f59e0b" },
+  googlejobs: { name: "Google Jobs", Icon: FaGoogle, color: "#4285f4" },
+  glassdoor: { name: "Glassdoor", Icon: FaGlobe, color: "#0caa41" },
+  rozee: { name: "Rozee.pk", Icon: FaGlobe, color: "#e11d48" },
 };
 
-const SAMPLE_LOCKED_JOBS = [
-  {
-    id: "sample-locked-1",
-    title: "Senior Full Stack Engineer (React / Node / Cloud)",
-    company: "Capregsoft",
-    monogram: "CS",
-    location: "Lahore, Pakistan · Hybrid",
-    salary: "PKR 350k – 550k / mo",
-    workMode: "Hybrid",
-    match: "98%",
-    skills: ["React", "TypeScript", "Node.js", "Docker", "AWS"],
-  },
-  {
-    id: "sample-locked-2",
-    title: "AI Systems Software Engineer",
-    company: "Motive (KeepTruckin)",
-    monogram: "MO",
-    location: "Lahore, Pakistan · Remote",
-    salary: "PKR 400k – 650k / mo",
-    workMode: "Remote",
-    match: "95%",
-    skills: ["Python", "FastAPI", "PostgreSQL", "PyTorch", "Redis"],
-  },
-  {
-    id: "sample-locked-3",
-    title: "Frontend Engineering Lead",
-    company: "Systems Limited",
-    monogram: "SL",
-    location: "Lahore, Pakistan · On-site",
-    salary: "PKR 450k – 700k / mo",
-    workMode: "On-site",
-    match: "94%",
-    skills: ["Next.js", "Tailwind CSS", "Architecture", "GraphQL"],
-  },
-  {
-    id: "sample-locked-4",
-    title: "Cloud Native Backend Developer",
-    company: "Arbisoft",
-    monogram: "AB",
-    location: "Lahore, Pakistan · Hybrid",
-    salary: "PKR 300k – 480k / mo",
-    workMode: "Hybrid",
-    match: "92%",
-    skills: ["Go", "Kubernetes", "gRPC", "Microservices", "CI/CD"],
-  },
-];
+// Blurred placeholders behind the sign-in prompt. Deliberately generic: no real employers.
+const SAMPLE_LOCKED_JOBS = [1, 2, 3, 4].map((n) => ({
+  id: `sample-locked-${n}`,
+  title: "Live role near you",
+  company: "Employer hidden",
+  monogram: "··",
+  location: "Your city · Hybrid",
+  salary: "Sign in to view",
+  workMode: "Hybrid",
+  match: "—",
+  skills: ["Your skills", "Matched"],
+}));
+
+function formatPostedAge(postedAt: string) {
+  const days = Math.floor((Date.now() - new Date(postedAt).getTime()) / 86_400_000);
+  if (!Number.isFinite(days) || days < 0) return "New";
+  if (days === 0) return "Posted today";
+  if (days === 1) return "Posted yesterday";
+  return `Posted ${days} days ago`;
+}
 
 export default function JobRadarPage() {
   const [, setLocation] = useLocation();
@@ -137,14 +105,7 @@ export default function JobRadarPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
 
-  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.appliedJobs);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  const { statusOf, openJob, toggleApplied } = useJobApplications();
 
   const [savedJobs, setSavedJobs] = useState<Set<string>>(() => {
     try {
@@ -154,26 +115,6 @@ export default function JobRadarPage() {
       return new Set();
     }
   });
-
-  const toggleApplyJob = (e: React.MouseEvent, job: any) => {
-    e.preventDefault();
-    setAppliedJobs((prev) => {
-      const next = new Set(prev);
-      const isCurrentlyApplied = next.has(job.id);
-      if (isCurrentlyApplied) {
-        next.delete(job.id);
-        toast.message(`Application status for ${job.company} reset.`);
-      } else {
-        next.add(job.id);
-        toast.success(`Marked application for ${job.company} as Applied! Opening portal…`);
-      }
-      try {
-        localStorage.setItem(STORAGE_KEYS.appliedJobs, JSON.stringify(Array.from(next)));
-      } catch {}
-      return next;
-    });
-    window.open(job.jobUrl, "_blank", "noopener,noreferrer");
-  };
 
   const toggleSaveJob = (job: any) => {
     setSavedJobs((prev) => {
@@ -192,18 +133,34 @@ export default function JobRadarPage() {
     });
   };
 
-  const liveJobsQuery = trpc.careerProfile.fetchLiveJobs.useQuery(
-    {
-      query: searchQuery || undefined,
-      location: profileQuery.data?.location || undefined,
-      workMode: activeModeFilter,
-      platform: activePlatformFilter,
-    },
-    { enabled: isAuthenticated, staleTime: 60 * 1000 }
+  const { location: detectedLocation, status: locationStatus, isResolving: locationResolving, detect: detectLocation, chooseCity } = useUserLocation(
+    profileQuery.data?.location,
+    { autoDetect: isAuthenticated }
   );
 
-  const userLocation = profileQuery.data?.location || "Lahore, Pakistan";
-  const targetRole = profileQuery.data?.targetRole || profileQuery.data?.careerField || "Software Engineer";
+  const liveJobsQuery = trpc.careerProfile.fetchLiveJobs.useQuery(
+    {
+      location: detectedLocation.label,
+      lat: detectedLocation.lat ?? undefined,
+      lng: detectedLocation.lng ?? undefined,
+      countryCode: detectedLocation.countryCode ?? undefined,
+    },
+    // Search, source and mode filters run on the client, so changing them never costs a job-search request.
+    { enabled: isAuthenticated && !locationResolving, staleTime: 10 * 60 * 1000, refetchOnWindowFocus: false }
+  );
+
+  const userLocation = detectedLocation.label;
+  const locationSourceLabel =
+    locationStatus === "detecting"
+      ? "Detecting…"
+      : detectedLocation.source === "gps"
+        ? "via GPS"
+        : detectedLocation.source === "manual"
+          ? "chosen by you"
+          : detectedLocation.source === "profile"
+            ? "from your profile"
+            : "default";
+  const targetRole = liveJobsQuery.data?.targetRole || profileQuery.data?.targetRole || profileQuery.data?.careerField || "Software Engineer";
 
   const allJobs = useMemo(() => {
     return liveJobsQuery.data?.jobs ?? [];
@@ -214,7 +171,7 @@ export default function JobRadarPage() {
       if (activePlatformFilter !== "all" && !job.platformSources.includes(activePlatformFilter)) {
         return false;
       }
-      if (activeLocationFilter === "near" && !job.location.toLowerCase().includes("pakistan") && job.workMode !== "Hybrid") {
+      if (activeLocationFilter === "near" && job.proximityTier !== "same-city" && job.proximityTier !== "nearby") {
         return false;
       }
       if (activeLocationFilter === "remote" && job.workMode !== "Remote") {
@@ -244,9 +201,8 @@ export default function JobRadarPage() {
 
     return [...list].sort((a, b) => {
       if (activeSortBy === "match") {
-        if (a.isLocationMatch && !b.isLocationMatch) return -1;
-        if (!a.isLocationMatch && b.isLocationMatch) return 1;
-        return b.matchScore - a.matchScore;
+        // The server already orders by proximity tier, then match score.
+        return 0;
       }
       if (activeSortBy === "salary") {
         const getSalRank = (sal: string) => {
@@ -260,9 +216,10 @@ export default function JobRadarPage() {
         return a.company.localeCompare(b.company);
       }
       if (activeSortBy === "proximity") {
-        if (a.isLocationMatch && !b.isLocationMatch) return -1;
-        if (!a.isLocationMatch && b.isLocationMatch) return 1;
-        return a.location.localeCompare(b.location);
+        const da = a.distanceKm ?? (a.workMode === "Remote" ? 5_000 : 10_000);
+        const db = b.distanceKm ?? (b.workMode === "Remote" ? 5_000 : 10_000);
+        if (da !== db) return da - db;
+        return b.matchScore - a.matchScore;
       }
       return b.matchScore - a.matchScore;
     });
@@ -360,14 +317,55 @@ export default function JobRadarPage() {
             <p className="ct-home-eyebrow" style={{ margin: 0 }}>
               <span /> Live Opportunity Hub
             </p>
-            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-raised))] border border-[color-mix(in_srgb,var(--accent)_25%,var(--border))] text-[var(--accent)] flex items-center gap-1">
+            <span
+              className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-raised))] border border-[color-mix(in_srgb,var(--accent)_25%,var(--border))] text-[var(--accent)] flex items-center gap-1"
+              title={detectedLocation.formattedAddress}
+            >
               <MapPin size={11} /> {userLocation}
+              <span className="font-normal text-[var(--text-muted)]">· {locationSourceLabel}</span>
             </span>
           </div>
+          {isAuthenticated && (
+            <div className="flex items-center gap-2 flex-wrap text-[11px]">
+              <span className="text-[var(--text-muted)]">Not right?</span>
+              <select
+                aria-label="Change your city"
+                value={detectedLocation.source === "manual" ? detectedLocation.cityKey ?? "" : ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    chooseCity(e.target.value);
+                    setCurrentPage(1);
+                  }
+                }}
+                className="text-[11px] font-semibold px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text)]"
+              >
+                <option value="">Change city…</option>
+                {PAKISTAN_CITIES.map((city) => (
+                  <option key={city.key} value={city.key}>{city.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={async () => {
+                  const result = await detectLocation();
+                  if (result) toast.success(`Location set to ${result.label}`);
+                  else toast.error("Couldn't get your location. Allow location access in your browser, or pick your city.");
+                  setCurrentPage(1);
+                }}
+                disabled={locationStatus === "detecting"}
+                className="font-semibold px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text)] flex items-center gap-1 disabled:opacity-60"
+              >
+                <Compass size={11} /> {locationStatus === "detecting" ? "Detecting…" : "Use my current location"}
+              </button>
+              {locationStatus === "denied" && (
+                <span className="text-amber-500">Location permission was blocked. Pick your city instead.</span>
+              )}
+            </div>
+          )}
 
           <h1 id="job-radar-title">Live Job Radar &amp; Offerings</h1>
           <p>
-            Real-time opportunities prioritized for your location and verified skills using 5 platform connectors (LinkedIn, Indeed, Upwork, GitHub, Fiverr). Review CareerOps Blocks A–H intelligence reports, apply directly on official portals, or simulate interview practice.
+            Live openings near you from LinkedIn, Indeed, Rozee.pk and Glassdoor (via Google for Jobs), plus remote roles open to Pakistan. Closest jobs first. Apply on the official posting, track what you applied to, or practise the role in an AI interview.
           </p>
           <div className="ct-profile-hero-note">
             <ShieldCheck size={14} /> Factual match signals · Verified legitimate career boards only · {isAuthenticated ? `${allJobs.length} Live listings indexed.` : "Sign in to unlock personalized radar."}
@@ -384,15 +382,18 @@ export default function JobRadarPage() {
           <small className="text-xs text-[var(--text-muted)]">
             {isAuthenticated ? `Targeting ${targetRole}` : "Sign in to Unlock 100+ Live Jobs"}
           </small>
-          <em><Sparkles size={13} /> 5 Connectors Active</em>
+          <em><Sparkles size={13} /> {liveJobsQuery.data?.localSearch === "not-configured" ? "Job search not connected" : "Live local + remote"}</em>
           <div className="ct-account-photo-actions mt-2">
             {isAuthenticated ? (
               <button
                 className="ct-button ct-button--secondary ct-button--calm text-xs"
                 type="button"
-                onClick={() => {
-                  void liveJobsQuery.refetch();
+                onClick={async () => {
                   setCurrentPage(1);
+                  const result = await liveJobsQuery.refetch();
+                  const problem = jobSearchStatusMessage(result.data?.localSearch);
+                  if (problem) toast.error(problem.title, { description: problem.body });
+                  else if (result.isError) toast.error("Couldn't load jobs. Please try again.");
                 }}
                 disabled={liveJobsQuery.isFetching}
               >
@@ -527,12 +528,13 @@ export default function JobRadarPage() {
                   <option value="remotive">🌐 Remotive (Remote Tech)</option>
                   <option value="themuse">🏢 The Muse (500k+ Jobs)</option>
                   <option value="jobicy">⚡ Jobicy (Global Remote)</option>
-                  <option value="linkedin">💼 LinkedIn Roles</option>
-                  <option value="indeed">🎯 Indeed Roles</option>
-                  <option value="github">🐙 GitHub Roles</option>
-                  <option value="upwork">⚡ Upwork Roles</option>
-                  <option value="fiverr">🚀 Fiverr Roles</option>
-                  <option value="remoteok">🌐 RemoteOK Roles</option>
+                  <option value="linkedin">💼 LinkedIn</option>
+                  <option value="indeed">🎯 Indeed</option>
+                  <option value="remoteok">🌐 RemoteOK</option>
+                  <option value="weworkremotely">🌐 We Work Remotely</option>
+                  <option value="googlejobs">🔎 Google Jobs</option>
+                  <option value="glassdoor">🏢 Glassdoor</option>
+                  <option value="rozee">🇵🇰 Rozee.pk</option>
                 </select>
               </div>
             </div>
@@ -586,12 +588,9 @@ export default function JobRadarPage() {
                   aria-label="Filter by city hub"
                 >
                   <option value="all">📍 All Locations</option>
-                  <option value="Lahore">🇵🇰 Lahore Hub</option>
-                  <option value="Karachi">🇵🇰 Karachi Hub</option>
-                  <option value="Islamabad">🇵🇰 Islamabad Hub</option>
-                  <option value="Wah Cantt">🇵🇰 Wah Cantt</option>
-                  <option value="Faisalabad">🇵🇰 Faisalabad</option>
-                  <option value="Peshawar">🇵🇰 Peshawar</option>
+                  {PAKISTAN_CITIES.map((city) => (
+                    <option key={city.key} value={city.name}>🇵🇰 {city.name}</option>
+                  ))}
                   <option value="remote">🌍 Global Remote</option>
                 </select>
               </div>
@@ -734,6 +733,35 @@ export default function JobRadarPage() {
           )}
         </div>
 
+        {/* ─── Search the user's city on boards that have no public API ─── */}
+        {isAuthenticated && <JobSearchStatusNotice status={liveJobsQuery.data?.localSearch} />}
+
+        {isAuthenticated && liveJobsQuery.data?.localSearch !== "not-configured" && (liveJobsQuery.data?.searchLinks?.length ?? 0) > 0 && (
+          <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-raised)] flex flex-col gap-2">
+            <span className="text-[11.5px] font-semibold text-[var(--text)] flex items-center gap-1.5">
+              <Search size={12} /> More {targetRole} openings in {detectedLocation.city}
+            </span>
+            {(liveJobsQuery.data?.localProviders?.length ?? 0) > 0 && (
+              <span className="text-[11px] text-[var(--text-muted)]">
+                Local jobs searched via {liveJobsQuery.data!.localProviders.map((p) => (p === "jsearch" ? "JSearch" : "SerpApi")).join(" + ")} (Google for Jobs), duplicates removed.
+              </span>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {liveJobsQuery.data!.searchLinks.map((link) => (
+                <a
+                  key={link.platform}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-1 transition-colors"
+                >
+                  {link.label} <ExternalLink size={10} />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ─── High-Hook Job Cards Grid (Content-Fitting & High Visibility) ─── */}
         {!isAuthenticated ? (
           <div
@@ -834,7 +862,7 @@ export default function JobRadarPage() {
               </div>
             </div>
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : liveJobsQuery.data?.localSearch === "not-configured" ? null : filteredJobs.length === 0 ? (
           <div className="p-12 text-center rounded-2xl border border-[var(--border)] bg-[var(--surface-raised)]">
             <Compass size={36} className="mx-auto text-[var(--text-muted)] opacity-60 mb-3" />
             <h3 className="text-base font-semibold text-[var(--text)] m-0">No matching live roles found</h3>
@@ -888,13 +916,21 @@ export default function JobRadarPage() {
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-xs text-[var(--text)] flex items-center gap-1">
                               {job.company}
-                              <span title="Verified ATS Employer">
-                                <ShieldCheck size={12} className="text-emerald-400" />
-                              </span>
+                              {job.postedAt && (
+                                <span
+                                  className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-500"
+                                  title={new Date(job.postedAt).toLocaleString()}
+                                >
+                                  {formatPostedAge(job.postedAt)}
+                                </span>
+                              )}
                             </span>
                           </div>
                           <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
                             <MapPin size={11} className="text-[var(--accent)]" /> {job.location}
+                          </span>
+                          <span className="text-[10.5px] text-[var(--text-muted)] block mt-0.5">
+                            {job.locationMatchReason}
                           </span>
                         </div>
                       </div>
@@ -963,17 +999,17 @@ export default function JobRadarPage() {
                     {/* Connector Provenance Signals */}
                     <div className="flex items-center justify-between gap-1.5 text-[11px] text-[var(--text-muted)]">
                       <span className="font-medium text-[var(--text-muted)] flex items-center gap-1">
-                        <Layers size={11} /> Match Signals:
+                        <Layers size={11} /> Source:
                       </span>
                       <div className="flex items-center gap-1">
                         {job.platformSources.map((plat: ConnectionPlatform) => {
-                          const meta = platformMeta[plat] || { name: plat, Icon: FaGithub, color: "#f97316" };
+                          const meta = platformMeta[plat] || { name: plat, Icon: FaGlobe, color: "#f97316" };
                           const Icon = meta.Icon;
                           return (
                             <span
                               key={plat}
                               className="px-1.5 py-0.5 rounded bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text)] flex items-center gap-1 text-[10px] font-medium"
-                              title={`Signal verified via ${meta.name}`}
+                              title={`Listed on ${meta.name}`}
                             >
                               <Icon size={10} aria-hidden="true" />
                               <span>{meta.name}</span>
@@ -1020,28 +1056,34 @@ export default function JobRadarPage() {
                       <a
                         href={job.jobUrl}
                         target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => toggleApplyJob(e, job)}
-                        className={`ct-button text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-xs ${
-                          appliedJobs.has(job.id)
-                            ? "bg-[color-mix(in_srgb,var(--success)_18%,var(--surface-raised))] border border-[var(--success)] text-[var(--success)] hover:bg-[color-mix(in_srgb,var(--success)_26%,var(--surface-raised))]"
-                            : "ct-button--secondary"
-                        }`}
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openJob(job);
+                        }}
+                        className="ct-button ct-button--secondary text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
                         style={{ minHeight: 28, textDecoration: "none" }}
-                        title={`Open official job application for ${job.company}`}
+                        title={`Open the official posting for ${job.company}`}
                       >
-                        {appliedJobs.has(job.id) ? (
-                          <>
-                            <Check size={12} className="text-[var(--success)] font-bold" />
-                            <span>Applied ✓</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Apply on Portal</span>
-                            <ExternalLink size={12} />
-                          </>
-                        )}
+                        <span>{statusOf(job.id) === "opened" ? "Open posting again" : "Apply on posting"}</span>
+                        <ExternalLink size={12} />
                       </a>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleApplied(job)}
+                        className={`text-xs font-semibold px-2.5 py-1.5 rounded-xl border flex items-center gap-1 transition-all ${
+                          statusOf(job.id) === "applied"
+                            ? "bg-[color-mix(in_srgb,var(--success)_18%,var(--surface-raised))] border-[var(--success)] text-[var(--success)]"
+                            : "bg-[var(--surface-raised)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                        }`}
+                        style={{ minHeight: 28 }}
+                        aria-pressed={statusOf(job.id) === "applied"}
+                        title={statusOf(job.id) === "applied" ? "Click to unmark" : "Mark this job as applied"}
+                      >
+                        <Check size={12} />
+                        <span>{statusOf(job.id) === "applied" ? "Applied" : "Mark applied"}</span>
+                      </button>
 
                       <button
                         type="button"
